@@ -8,10 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    @State private var user = UserProfile.sampleUser
-    @State private var showingEditProfile = false
-    // 风格设置需要的状态
-    @State private var styleProfile = UserStyleProfile.defaultProfile 
+    @StateObject private var viewModel = ProfileViewModel() 
     
     var body: some View {
         NavigationView {
@@ -39,12 +36,12 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("编辑") { showingEditProfile = true }
+                    Button("编辑") { viewModel.showEditProfile() }
                         .foregroundColor(.neonBlue)
                 }
             }
-            .sheet(isPresented: $showingEditProfile) {
-                EditProfileView(user: $user)
+            .sheet(isPresented: $viewModel.showingEditProfile) {
+                EditProfileView(user: $viewModel.user)
             }
         }
     }
@@ -70,21 +67,21 @@ struct ProfileView: View {
                     .fill(Color.black)
                     .frame(width: 100, height: 100)
                 
-                Text(user.initials)
+                Text(viewModel.user.initials)
                     .font(.system(size: 40, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
             .padding(.top, 20)
             
             VStack(spacing: 8) {
-                Text(user.username)
+                Text(viewModel.user.username)
                     .font(.title2.bold())
                     .foregroundColor(.white)
                 
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .foregroundColor(.neonYellow)
-                    Text("Lv.\(user.level) 时尚探索者")
+                    Text("Lv.\(viewModel.user.level) \(viewModel.getLevelTitle())")
                         .font(.subheadline.monospaced())
                         .foregroundColor(.neonYellow)
                 }
@@ -99,9 +96,9 @@ struct ProfileView: View {
     // 统计数据
     private var statsSection: some View {
         HStack(spacing: 12) {
-            ProfileStatItem(title: "成功预测", value: "\(user.successfulPredictions)", color: .neonGreen)
-            ProfileStatItem(title: "总积分", value: "\(user.totalPoints)", color: .neonPurple)
-            ProfileStatItem(title: "准确率", value: "\(user.accuracyRate)%", color: .neonBlue)
+            ProfileStatItem(title: "成功预测", value: "\(viewModel.user.successfulPredictions)", color: .neonGreen)
+            ProfileStatItem(title: "总积分", value: "\(viewModel.user.totalPoints)", color: .neonPurple)
+            ProfileStatItem(title: "准确率", value: "\(viewModel.user.accuracyRate)%", color: .neonBlue)
         }
         .padding(.horizontal)
     }
@@ -116,7 +113,7 @@ struct ProfileView: View {
                 
                 Spacer()
                 
-                NavigationLink(destination: AchievementsDetailView(achievements: user.achievements)) {
+                NavigationLink(destination: AchievementsDetailView(achievements: viewModel.user.achievements)) {
                     HStack(spacing: 4) {
                         Text("查看全部")
                             .font(.caption)
@@ -130,7 +127,7 @@ struct ProfileView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(user.achievements) { achievement in
+                    ForEach(viewModel.user.achievements) { achievement in
                         AchievementBadge(achievement: achievement)
                     }
                 }
@@ -143,7 +140,7 @@ struct ProfileView: View {
     private var settingsSection: some View {
         VStack(spacing: 12) {
             // 风格偏好设置
-            NavigationLink(destination: StyleSetupView(styleProfile: $styleProfile).navigationTitle("风格偏好").navigationBarTitleDisplayMode(.inline)) {
+            NavigationLink(destination: StyleSetupView(styleProfile: $viewModel.styleProfile).navigationTitle("风格偏好").navigationBarTitleDisplayMode(.inline)) {
                 SettingRowContent(icon: "person.crop.circle.badge.checkmark", title: "风格偏好设置", color: .neonPink)
             }
             

@@ -8,14 +8,7 @@
 import SwiftUI
 
 struct SubmitTrendView: View {
-    @State private var trendName = ""
-    @State private var selectedCategory: FashionCategory = .style
-    @State private var description = ""
-    @State private var inspiration = ""
-    @State private var showingCamera = false
-    @State private var selectedImage: UIImage?
-    @State private var submittedTrends: [SubmittedTrend] = []
-    @State private var showingSubmissionSuccess = false
+    @StateObject private var viewModel = SubmitTrendViewModel()
     
     var body: some View {
         NavigationView {
@@ -48,8 +41,8 @@ struct SubmitTrendView: View {
             }
             .navigationTitle("发现新趋势")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("提名成功!", isPresented: $showingSubmissionSuccess) {
-                Button("确定") { clearForm() }
+            .alert("提名成功!", isPresented: $viewModel.showingSubmissionSuccess) {
+                Button("确定") { viewModel.clearForm() }
             } message: {
                 Text("你的趋势提名已提交，等待审核中。如果被采纳，你将获得趋势捕手勋章！")
             }
@@ -91,7 +84,7 @@ struct SubmitTrendView: View {
                 .foregroundColor(.white)
             
             VStack(spacing: 16) {
-                CustomTextField(title: "趋势名称", placeholder: "例如：奶奶灰针织", text: $trendName)
+                CustomTextField(title: "趋势名称", placeholder: "例如：奶奶灰针织", text: $viewModel.trendName)
                 
                 // 类别选择
                 VStack(alignment: .leading, spacing: 8) {
@@ -102,16 +95,16 @@ struct SubmitTrendView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(FashionCategory.allCases, id: \.self) { category in
-                                Button(action: { selectedCategory = category }) {
+                                Button(action: { viewModel.selectCategory(category) }) {
                                     Text(category.rawValue)
                                         .font(.subheadline)
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 8)
                                         .background(
                                             Capsule()
-                                                .fill(selectedCategory == category ? Color.neonBlue : Color.white.opacity(0.1))
+                                                .fill(viewModel.selectedCategory == category ? Color.neonBlue : Color.white.opacity(0.1))
                                         )
-                                        .foregroundColor(selectedCategory == category ? .black : .white)
+                                        .foregroundColor(viewModel.selectedCategory == category ? .black : .white)
                                 }
                             }
                         }
@@ -124,7 +117,7 @@ struct SubmitTrendView: View {
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.6))
                     
-                    TextEditor(text: $description)
+                    TextEditor(text: $viewModel.description)
                         .frame(height: 100)
                         .padding(12)
                         .background(Color.white.opacity(0.05))
@@ -140,7 +133,7 @@ struct SubmitTrendView: View {
     // 灵感来源
     private var inspirationSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CustomTextField(title: "灵感来源", placeholder: "小红书、TikTok、街拍...", text: $inspiration)
+            CustomTextField(title: "灵感来源", placeholder: "小红书、TikTok、街拍...", text: $viewModel.inspiration)
         }
         .padding()
         .glassCard()
@@ -153,8 +146,8 @@ struct SubmitTrendView: View {
                 .font(.headline)
                 .foregroundColor(.white)
             
-            Button(action: { showingCamera = true }) {
-                if let image = selectedImage {
+            Button(action: { viewModel.showCamera() }) {
+                if let image = viewModel.selectedImage {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -191,14 +184,14 @@ struct SubmitTrendView: View {
     
     // 提交按钮
     private var submitButton: some View {
-        Button(action: submitTrend) {
+        Button(action: { viewModel.submitTrend() }) {
             HStack {
                 Image(systemName: "paperplane.fill")
                 Text("提交发现")
             }
         }
-        .buttonStyle(NeonSolidButtonStyle(color: canSubmit ? .neonPurple : .gray.opacity(0.3), textColor: .white))
-        .disabled(!canSubmit)
+        .buttonStyle(NeonSolidButtonStyle(color: viewModel.canSubmit ? .neonPurple : .gray.opacity(0.3), textColor: .white))
+        .disabled(!viewModel.canSubmit)
     }
     
     // 我的提名
@@ -208,7 +201,7 @@ struct SubmitTrendView: View {
                 .font(.headline)
                 .foregroundColor(.white)
             
-            if submittedTrends.isEmpty {
+            if viewModel.submittedTrends.isEmpty {
                 Text("暂无提名记录")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.4))
@@ -216,40 +209,12 @@ struct SubmitTrendView: View {
                     .padding()
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(submittedTrends) { submission in
+                    ForEach(viewModel.submittedTrends) { submission in
                         SubmissionCard(submission: submission)
                     }
                 }
             }
         }
-    }
-    
-    // Helpers
-    private var canSubmit: Bool {
-        !trendName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !description.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-    
-    private func submitTrend() {
-        let newSubmission = SubmittedTrend(
-            name: trendName.trimmingCharacters(in: .whitespaces),
-            category: selectedCategory,
-            description: description.trimmingCharacters(in: .whitespaces),
-            inspiration: inspiration.trimmingCharacters(in: .whitespaces),
-            submitDate: Date(),
-            status: .pending,
-            supportCount: 1
-        )
-        submittedTrends.insert(newSubmission, at: 0)
-        showingSubmissionSuccess = true
-    }
-    
-    private func clearForm() {
-        trendName = ""
-        description = ""
-        inspiration = ""
-        selectedImage = nil
-        selectedCategory = .style
     }
 }
 

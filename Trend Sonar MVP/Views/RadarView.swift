@@ -8,34 +8,11 @@
 import SwiftUI
 
 struct RadarView: View {
-    @State private var trends: [TrendItem] = TrendItem.sampleData
-    @State private var selectedTrend: TrendItem?
-    @State private var isScanning = false
-    @State private var scanAngle: Double = 0
-    @State private var selectedCategory: FashionCategory?
-    @State private var styleProfile = UserStyleProfile()
-    @State private var showingStyleSetup = false
-    @State private var isPersonalized = false
+    @StateObject private var viewModel = RadarViewModel()
     
-    // 动画状态
-    @State private var pulseScale: CGFloat = 1.0
-    
+    // 现在使用 ViewModel 的计算属性
     var filteredTrends: [TrendItem] {
-        var baseTrends = trends
-        
-        // 按类别过滤
-        if let category = selectedCategory {
-            baseTrends = baseTrends.filter { $0.category == category }
-        }
-        
-        // 按个性化风格过滤
-        if isPersonalized && !styleProfile.preferredStyles.isEmpty {
-            baseTrends = baseTrends.filter { trend in
-                styleProfile.compatibilityScore(for: trend) > 60
-            }
-        }
-        
-        return baseTrends
+        viewModel.filteredTrends
     }
     
     var body: some View {
@@ -53,7 +30,7 @@ struct RadarView: View {
                     RadarGrid(center: center, size: size)
                     
                     // 扫描线
-                    ScanningEffect(center: center, size: size, angle: scanAngle)
+                    ScanningEffect(center: center, size: size, angle: viewModel.scanAngle)
                     
                     // 趋势点
                     trendsLayer(center: center, size: size)
@@ -76,9 +53,9 @@ struct RadarView: View {
                 }
                 
                 // 4. 详情弹窗
-                if let trend = selectedTrend {
+                if let trend = viewModel.selectedTrend {
                     Color.black.opacity(0.4).ignoresSafeArea()
-                        .onTapGesture { withAnimation { selectedTrend = nil } }
+                        .onTapGesture { viewModel.closeTrendDetail() }
                     
                     trendDetailCard(trend: trend)
                         .padding()
@@ -87,11 +64,8 @@ struct RadarView: View {
                 }
             }
         }
-        .onAppear {
-            startScanning()
-        }
-        .sheet(isPresented: $showingStyleSetup) {
-            StyleSetupView(styleProfile: $styleProfile)
+        .sheet(isPresented: $viewModel.showingStyleSetup) {
+            StyleSetupView(styleProfile: $viewModel.styleProfile)
                 .preferredColorScheme(.dark) // 强制暗黑模式
         }
     }
@@ -101,9 +75,9 @@ struct RadarView: View {
     // 趋势点层
     private func trendsLayer(center: CGPoint, size: CGFloat) -> some View {
         ForEach(filteredTrends) { trend in
-            let position = calculateTrendPosition(trend: trend, center: center, size: size)
-            let compatibilityScore = styleProfile.compatibilityScore(for: trend)
-            let isSelected = selectedTrend?.id == trend.id
+            let position = viewModel.calculateTrendPosition(trend: trend, center: center, size: size)
+            let compatibilityScore = viewModel.styleProfile.compatibilityScore(for: trend)
+            let isSelected = viewModel.selectedTrend?.id == trend.id
             
             ZStack {
                 // 外发光晕 (选中或高热度时更明显)
@@ -117,7 +91,7 @@ struct RadarView: View {
                 // 核心点
                 Circle()
                     .fill(trend.zone.color)
-                    .frame(width: trendPointSize(trend: trend), height: trendPointSize(trend: trend))
+                    .frame(width: viewModel.trendPointSize(trend: trend), height: viewModel.trendPointSize(trend: trend))
                     .overlay(
                         Circle()
                             .stroke(Color.white, lineWidth: isSelected ? 2 : 1)
@@ -126,25 +100,23 @@ struct RadarView: View {
                     .glow(color: trend.zone.color, radius: isSelected ? 15 : 5)
                 
                 // 个性化兼容性指示环
-                if isPersonalized && !styleProfile.preferredStyles.isEmpty {
+                if viewModel.isPersonalized && !viewModel.styleProfile.preferredStyles.isEmpty {
                     Circle()
                         .trim(from: 0, to: 0.8) // 缺口环设计
                         .stroke(
-                            compatibilityColor(for: compatibilityScore),
+                            viewModel.compatibilityColor(for: compatibilityScore),
                             style: StrokeStyle(lineWidth: 2, lineCap: .round)
                         )
-                        .frame(width: trendPointSize(trend: trend) + 10, height: trendPointSize(trend: trend) + 10)
+                        .frame(width: viewModel.trendPointSize(trend: trend) + 10, height: viewModel.trendPointSize(trend: trend) + 10)
                         .rotationEffect(.degrees(-90))
-                        .shadow(color: compatibilityColor(for: compatibilityScore), radius: 3)
+                        .shadow(color: viewModel.compatibilityColor(for: compatibilityScore), radius: 3)
                 }
             }
             .position(position)
             .scaleEffect(isSelected ? 1.5 : 1.0)
             .animation(.spring(response: 0.4, dampingFraction: 0.6), value: isSelected)
             .onTapGesture {
-                withAnimation(.spring()) {
-                    selectedTrend = selectedTrend?.id == trend.id ? nil : trend
-                }
+                viewModel.selectTrend(trend)
             }
         }
     }
@@ -171,24 +143,22 @@ struct RadarView: View {
             HStack(spacing: 12) {
                 ForEach(FashionCategory.allCases, id: \.self) { category in
                     Button(action: {
-                        withAnimation(.easeInOut) {
-                            selectedCategory = selectedCategory == category ? nil : category
-                        }
+                        viewModel.toggleCategoryFilter(category)
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: category.icon)
                             Text(category.rawValue)
                         }
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(selectedCategory == category ? .black : .white)
+                        .foregroundColor(viewModel.selectedCategory == category ? .black : .white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(selectedCategory == category ? Color.neonBlue : Color.white.opacity(0.1))
+                                .fill(viewModel.selectedCategory == category ? Color.neonBlue : Color.white.opacity(0.1))
                         )
                         // 选中时发光
-                        .shadow(color: selectedCategory == category ? .neonBlue.opacity(0.6) : .clear, radius: 10)
+                        .shadow(color: viewModel.selectedCategory == category ? .neonBlue.opacity(0.6) : .clear, radius: 10)
                     }
                 }
             }
@@ -202,32 +172,26 @@ struct RadarView: View {
             HStack(spacing: 16) {
                 // 个性化开关
                 Button(action: {
-                    withAnimation(.easeInOut) {
-                        if !styleProfile.preferredStyles.isEmpty {
-                            isPersonalized.toggle()
-                        } else {
-                            showingStyleSetup = true
-                        }
-                    }
+                    viewModel.togglePersonalization()
                 }) {
                     HStack(spacing: 8) {
-                        Image(systemName: isPersonalized ? "person.fill.checkmark" : "person")
-                        Text(isPersonalized ? "个性雷达 ON" : "全部趋势")
+                        Image(systemName: viewModel.isPersonalized ? "person.fill.checkmark" : "person")
+                        Text(viewModel.isPersonalized ? "个性雷达 ON" : "全部趋势")
                     }
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(isPersonalized ? .black : .white)
+                    .foregroundColor(viewModel.isPersonalized ? .black : .white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(
                         Capsule()
-                            .fill(isPersonalized ? Color.neonPurple : Color.black.opacity(0.5))
+                            .fill(viewModel.isPersonalized ? Color.neonPurple : Color.black.opacity(0.5))
                             .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
                     )
-                    .glow(color: isPersonalized ? .neonPurple : .clear, radius: 10)
+                    .glow(color: viewModel.isPersonalized ? .neonPurple : .clear, radius: 10)
                 }
                 
                 // 设置按钮
-                Button(action: { showingStyleSetup = true }) {
+                Button(action: { viewModel.showingStyleSetup = true }) {
                     Image(systemName: "slider.horizontal.3")
                         .foregroundColor(.white)
                         .padding(10)
@@ -238,7 +202,7 @@ struct RadarView: View {
             Spacer()
             
             // 兼容性图例 (仅在个性化模式显示)
-            if isPersonalized {
+            if viewModel.isPersonalized {
                 HStack(spacing: 12) {
                     LegendItem(color: .green, text: "High")
                     LegendItem(color: .orange, text: "Mid")
@@ -305,14 +269,11 @@ struct RadarView: View {
             // 操作按钮
             HStack(spacing: 12) {
                 Button("我看好它") {
-                    withAnimation { selectedTrend = nil }
-                    // 触发震动反馈
-                    let impact = UIImpactFeedbackGenerator(style: .medium)
-                    impact.impactOccurred()
+                    viewModel.predictTrend(trend)
                 }
                 .buttonStyle(NeonSolidButtonStyle(color: .neonGreen))
                 
-                Button(action: { withAnimation { selectedTrend = nil } }) {
+                Button(action: { viewModel.closeTrendDetail() }) {
                     Image(systemName: "xmark")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -327,35 +288,7 @@ struct RadarView: View {
         .frame(maxWidth: 340)
     }
     
-    // MARK: - Helpers
-    private func calculateTrendPosition(trend: TrendItem, center: CGPoint, size: CGFloat) -> CGPoint {
-        let radius = (size / 2) * trend.distance
-        let x = center.x + cos(trend.angle * .pi / 180) * radius
-        let y = center.y + sin(trend.angle * .pi / 180) * radius
-        return CGPoint(x: x, y: y)
-    }
-    
-    private func trendPointSize(trend: TrendItem) -> CGFloat {
-        return 8 + CGFloat(trend.heatScore) / 8
-    }
-    
-    private func startScanning() {
-        isScanning = true
-        withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
-            scanAngle = 360
-        }
-        withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-            pulseScale = 1.1
-        }
-    }
-    
-    private func compatibilityColor(for score: Int) -> Color {
-        switch score {
-        case 80...100: return .green
-        case 60...79: return .orange
-        default: return .red
-        }
-    }
+    // MARK: - Helpers (现在都在 ViewModel 中)
 }
 
 // MARK: - Components

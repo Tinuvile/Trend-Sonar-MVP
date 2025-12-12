@@ -8,12 +8,7 @@
 import SwiftUI
 
 struct PredictionView: View {
-    @State private var predictions: [UserPrediction] = []
-    @State private var selectedTrend: TrendItem?
-    @State private var showingPredictionSheet = false
-    @State private var confidence: Double = 50
-    
-    private let nicheTrends = TrendItem.sampleData.filter { $0.zone == .niche }
+    @StateObject private var viewModel = PredictionViewModel()
     
     var body: some View {
         NavigationView {
@@ -37,8 +32,8 @@ struct PredictionView: View {
             }
             .navigationTitle("趋势预测")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingPredictionSheet) {
-                if let trend = selectedTrend {
+            .sheet(isPresented: $viewModel.showingPredictionSheet) {
+                if let trend = viewModel.selectedTrend {
                     predictionSheet(trend: trend)
                         .preferredColorScheme(.dark)
                 }
@@ -51,21 +46,21 @@ struct PredictionView: View {
         HStack(spacing: 16) {
             StatCard(
                 title: "预测准确率", 
-                value: "73%", 
+                value: "\(viewModel.accuracyRate)%", 
                 color: .neonGreen,
                 icon: "target"
             )
             
             StatCard(
                 title: "获得积分", 
-                value: "1,240", 
+                value: "\(viewModel.totalPoints)", 
                 color: .neonYellow,
                 icon: "star.fill"
             )
             
             StatCard(
                 title: "成功预测", 
-                value: "8", 
+                value: "\(viewModel.successfulPredictions)", 
                 color: .neonBlue,
                 icon: "checkmark.seal.fill"
             )
@@ -95,10 +90,9 @@ struct PredictionView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(nicheTrends) { trend in
+                    ForEach(viewModel.nicheTrends) { trend in
                         TrendPredictionCard(trend: trend) {
-                            selectedTrend = trend
-                            showingPredictionSheet = true
+                            viewModel.selectTrendForPrediction(trend)
                         }
                     }
                 }
@@ -117,13 +111,13 @@ struct PredictionView: View {
                 
                 Spacer()
                 
-                Text("\(predictions.count) RECORDS")
+                Text("\(viewModel.predictions.count) RECORDS")
                     .font(.caption.monospaced())
                     .foregroundColor(.white.opacity(0.5))
             }
             .padding(.horizontal)
             
-            if predictions.isEmpty {
+            if viewModel.predictions.isEmpty {
                 VStack(spacing: 16) {
                     Image(systemName: "crystal.ball")
                         .font(.system(size: 48))
@@ -144,8 +138,8 @@ struct PredictionView: View {
                 .padding(.horizontal)
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(predictions) { prediction in
-                        PredictionHistoryCard(prediction: prediction)
+                    ForEach(viewModel.predictions) { prediction in
+                        PredictionHistoryCard(prediction: prediction, viewModel: viewModel)
                     }
                 }
                 .padding(.horizontal)
@@ -228,7 +222,7 @@ struct PredictionView: View {
                             .foregroundColor(trend.zone.color)
                     }
                     
-                    Slider(value: $confidence, in: 0...100, step: 10)
+                    Slider(value: $viewModel.confidence, in: 0...100, step: 10)
                         .accentColor(trend.zone.color)
                 }
                 .padding()
@@ -237,30 +231,13 @@ struct PredictionView: View {
                 Spacer()
                 
                 // 提交按钮
-                Button(action: submitPrediction) {
+                Button(action: { viewModel.submitPrediction() }) {
                     Text("提交预测")
                 }
                 .buttonStyle(NeonSolidButtonStyle(color: trend.zone.color))
             }
             .padding()
         }
-    }
-    
-    private func submitPrediction() {
-        guard let trend = selectedTrend else { return }
-        
-        let newPrediction = UserPrediction(
-            trendName: trend.name,
-            predictedDate: Date(),
-            currentZone: trend.zone,
-            targetZone: .trending,
-            confidence: Int(confidence),
-            isCorrect: nil
-        )
-        
-        predictions.append(newPrediction)
-        showingPredictionSheet = false
-        selectedTrend = nil
     }
 }
 
@@ -390,16 +367,17 @@ struct PredictionOption: View {
 // 预测历史卡片
 struct PredictionHistoryCard: View {
     let prediction: UserPrediction
+    let viewModel: PredictionViewModel
     
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(statusColor.opacity(0.2))
+                    .fill(viewModel.getStatusColor(for: prediction).opacity(0.2))
                     .frame(width: 44, height: 44)
                 
-                Image(systemName: statusIcon)
-                    .foregroundColor(statusColor)
+                Image(systemName: viewModel.getStatusIcon(for: prediction))
+                    .foregroundColor(viewModel.getStatusColor(for: prediction))
             }
             
             VStack(alignment: .leading, spacing: 4) {
@@ -415,12 +393,12 @@ struct PredictionHistoryCard: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
-                Text(statusText)
+                Text(viewModel.getStatusText(for: prediction))
                     .font(.caption.bold())
-                    .foregroundColor(statusColor)
+                    .foregroundColor(viewModel.getStatusColor(for: prediction))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(statusColor.opacity(0.1)))
+                    .background(Capsule().fill(viewModel.getStatusColor(for: prediction).opacity(0.1)))
                 
                 Text("信心 \(prediction.confidence)%")
                     .font(.caption2.monospaced())
