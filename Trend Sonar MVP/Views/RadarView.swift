@@ -13,12 +13,26 @@ struct RadarView: View {
     @State private var isScanning = false
     @State private var scanAngle: Double = 0
     @State private var selectedCategory: FashionCategory?
+    @State private var styleProfile = UserStyleProfile()
+    @State private var showingStyleSetup = false
+    @State private var isPersonalized = false
     
     var filteredTrends: [TrendItem] {
+        var baseTrends = trends
+        
+        // 按类别过滤
         if let category = selectedCategory {
-            return trends.filter { $0.category == category }
+            baseTrends = baseTrends.filter { $0.category == category }
         }
-        return trends
+        
+        // 按个性化风格过滤
+        if isPersonalized && !styleProfile.preferredStyles.isEmpty {
+            baseTrends = baseTrends.filter { trend in
+                styleProfile.compatibilityScore(for: trend) > 60
+            }
+        }
+        
+        return baseTrends
     }
     
     var body: some View {
@@ -55,6 +69,9 @@ struct RadarView: View {
                 // 类别过滤器
                 categoryFilter
                 
+                // 个性化过滤器
+                personalizationControls
+                
                 // 趋势详情卡片
                 if let trend = selectedTrend {
                     trendDetailCard(trend: trend)
@@ -63,6 +80,9 @@ struct RadarView: View {
         }
         .onAppear {
             startScanning()
+        }
+        .sheet(isPresented: $showingStyleSetup) {
+            StyleSetupView(styleProfile: $styleProfile)
         }
     }
     
@@ -138,24 +158,37 @@ struct RadarView: View {
     private func trendsLayer(center: CGPoint, size: CGFloat) -> some View {
         ForEach(filteredTrends) { trend in
             let position = calculateTrendPosition(trend: trend, center: center, size: size)
+            let compatibilityScore = styleProfile.compatibilityScore(for: trend)
             
-            Circle()
-                .fill(trend.zone.color)
-                .frame(width: trendPointSize(trend: trend), height: trendPointSize(trend: trend))
-                .position(position)
-                .overlay(
+            ZStack {
+                // 主趋势点
+                Circle()
+                    .fill(trend.zone.color)
+                    .frame(width: trendPointSize(trend: trend), height: trendPointSize(trend: trend))
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: selectedTrend?.id == trend.id ? 2 : 1)
+                    )
+                
+                // 个性化兼容性指示环
+                if isPersonalized && !styleProfile.preferredStyles.isEmpty {
                     Circle()
-                        .stroke(Color.white, lineWidth: selectedTrend?.id == trend.id ? 2 : 1)
-                        .frame(width: trendPointSize(trend: trend), height: trendPointSize(trend: trend))
-                        .position(position)
-                )
-                .scaleEffect(selectedTrend?.id == trend.id ? 1.2 : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: selectedTrend?.id)
-                .onTapGesture {
-                    withAnimation(.spring()) {
-                        selectedTrend = selectedTrend?.id == trend.id ? nil : trend
-                    }
+                        .stroke(
+                            compatibilityColor(for: compatibilityScore),
+                            lineWidth: 3
+                        )
+                        .frame(width: trendPointSize(trend: trend) + 6, height: trendPointSize(trend: trend) + 6)
+                        .opacity(0.8)
                 }
+            }
+            .position(position)
+            .scaleEffect(selectedTrend?.id == trend.id ? 1.2 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: selectedTrend?.id)
+            .onTapGesture {
+                withAnimation(.spring()) {
+                    selectedTrend = selectedTrend?.id == trend.id ? nil : trend
+                }
+            }
         }
     }
     
@@ -207,6 +240,89 @@ struct RadarView: View {
         }
     }
     
+    // 个性化控制面板
+    private var personalizationControls: some View {
+        VStack {
+            Spacer()
+            
+            HStack(spacing: 16) {
+                // 个性化开关
+                Button(action: {
+                    withAnimation(.easeInOut) {
+                        if !styleProfile.preferredStyles.isEmpty {
+                            isPersonalized.toggle()
+                        } else {
+                            showingStyleSetup = true
+                        }
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: isPersonalized ? "person.fill.checkmark" : "person")
+                            .font(.system(size: 16))
+                        Text(isPersonalized ? "个性化" : "全部")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(isPersonalized ? .white : .gray)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(isPersonalized ? 
+                                 Color.purple.opacity(0.8) : 
+                                 Color.black.opacity(0.3))
+                    )
+                }
+                
+                // 设置按钮
+                Button(action: {
+                    showingStyleSetup = true
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.gray)
+                        .padding(8)
+                        .background(
+                            Circle()
+                                .fill(Color.black.opacity(0.3))
+                        )
+                }
+                
+                Spacer()
+                
+                // 兼容性说明
+                if isPersonalized && !styleProfile.preferredStyles.isEmpty {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                        Text("适合")
+                        
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 8, height: 8)
+                        Text("一般")
+                        
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                        Text("不适合")
+                    }
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.black.opacity(0.3))
+                    )
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+    }
+    
     // 趋势详情卡片
     private func trendDetailCard(trend: TrendItem) -> some View {
         VStack {
@@ -253,6 +369,25 @@ struct RadarView: View {
                         .foregroundColor(trend.growthRate > 0 ? .green : .red)
                     
                     Spacer()
+                    
+                    // 个性化兼容性分数
+                    if isPersonalized && !styleProfile.preferredStyles.isEmpty {
+                        let compatibilityScore = styleProfile.compatibilityScore(for: trend)
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(compatibilityColor(for: compatibilityScore))
+                                .frame(width: 8, height: 8)
+                            Text("匹配度 \(compatibilityScore)%")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.3))
+                        )
+                    }
                     
                     Text(trend.zone.rawValue)
                         .font(.caption)
@@ -321,6 +456,15 @@ struct RadarView: View {
         isScanning = true
         withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
             scanAngle = 360
+        }
+    }
+    
+    // 兼容性颜色
+    private func compatibilityColor(for score: Int) -> Color {
+        switch score {
+        case 80...100: return .green
+        case 60...79: return .orange
+        default: return .red
         }
     }
 }

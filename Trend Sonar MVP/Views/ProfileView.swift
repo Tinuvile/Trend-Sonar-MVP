@@ -193,6 +193,18 @@ struct ProfileView: View {
             
             VStack(spacing: 0) {
                 SettingRow(
+                    icon: "person.crop.circle.fill.badge.checkmark",
+                    title: "风格设置",
+                    subtitle: "个性化你的趋势雷达",
+                    action: {
+                        // TODO: 打开风格设置页面
+                    }
+                )
+                
+                Divider()
+                    .padding(.leading, 44)
+                
+                SettingRow(
                     icon: "bell.fill",
                     title: "推送通知",
                     subtitle: "趋势提醒和预测结果",
