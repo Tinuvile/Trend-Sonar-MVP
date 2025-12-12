@@ -10,65 +10,65 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 0
     
+    init() {
+        // 配置 TabBar 全局样式
+        let appearance = UITabBarAppearance()
+        appearance.configureWithTransparentBackground() // 透明背景
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark) // 毛玻璃效果
+        appearance.backgroundColor = UIColor(Color.deepBackground.opacity(0.8))
+        
+        // 选中状态
+        appearance.stackedLayoutAppearance.selected.iconColor = UIColor(Color.neonGreen)
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor(Color.neonGreen)
+        ]
+        
+        // 未选中状态
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.white.withAlphaComponent(0.4)
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor.white.withAlphaComponent(0.4)
+        ]
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+    
     var body: some View {
         TabView(selection: $selectedTab) {
-            // 趋势雷达 - 主页面
+            // 趋势雷达
             RadarView()
                 .tabItem {
-                    Image(systemName: "radar")
-                    Text("雷达")
+                    Image(systemName: "waveform.path.ecg")
+                    Text("RADAR")
                 }
                 .tag(0)
             
             // 趋势预测
             PredictionView()
                 .tabItem {
-                    Image(systemName: "target")
-                    Text("预测")
+                    Image(systemName: "scope")
+                    Text("PREDICT")
                 }
                 .tag(1)
             
             // 提名新趋势
             SubmitTrendView()
                 .tabItem {
-                    Image(systemName: "plus.circle.fill")
-                    Text("提名")
+                    Image(systemName: "plus.diamond.fill")
+                    Text("SCOUT")
                 }
                 .tag(2)
             
             // 个人资料
             ProfileView()
                 .tabItem {
-                    Image(systemName: "person.circle")
-                    Text("我的")
+                    Image(systemName: "person.crop.circle.fill")
+                    Text("PROFILE")
                 }
                 .tag(3)
         }
-        .accentColor(.blue)
-        .onAppear {
-            setupTabBarAppearance()
-        }
-    }
-    
-    private func setupTabBarAppearance() {
-        // 设置 TabBar 样式
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor.systemBackground
-        
-        // 设置选中和未选中的颜色
-        appearance.stackedLayoutAppearance.selected.iconColor = UIColor.systemBlue
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor.systemBlue
-        ]
-        
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor.systemGray
-        ]
-        
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+        .accentColor(.neonGreen)
+        .preferredColorScheme(.dark) // 强制全应用暗黑模式
     }
 }
 

@@ -17,21 +17,30 @@ struct PredictionView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // 头部统计
-                headerStats
+            ZStack {
+                // 背景
+                Color.clear.appBackground()
                 
-                // 可预测的趋势列表
-                trendsList
-                
-                // 我的预测记录
-                myPredictions
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // 头部统计
+                        headerStats
+                        
+                        // 可预测的趋势列表
+                        trendsList
+                        
+                        // 我的预测记录
+                        myPredictions
+                    }
+                    .padding(.bottom, 20)
+                }
             }
             .navigationTitle("趋势预测")
             .navigationBarTitleDisplayMode(.large)
             .sheet(isPresented: $showingPredictionSheet) {
                 if let trend = selectedTrend {
                     predictionSheet(trend: trend)
+                        .preferredColorScheme(.dark)
                 }
             }
         }
@@ -39,53 +48,53 @@ struct PredictionView: View {
     
     // 头部统计信息
     private var headerStats: some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 16) {
             StatCard(
                 title: "预测准确率", 
                 value: "73%", 
-                subtitle: "本月",
-                color: .green,
+                color: .neonGreen,
                 icon: "target"
             )
             
             StatCard(
                 title: "获得积分", 
                 value: "1,240", 
-                subtitle: "总计",
-                color: .orange,
+                color: .neonYellow,
                 icon: "star.fill"
             )
             
             StatCard(
                 title: "成功预测", 
                 value: "8", 
-                subtitle: "次数",
-                color: .blue,
+                color: .neonBlue,
                 icon: "checkmark.seal.fill"
             )
         }
-        .padding()
-        .background(Color(.systemGray6))
+        .padding(.horizontal)
+        .padding(.top)
     }
     
     // 趋势列表
     private var trendsList: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("小众潜力股")
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.title2.bold())
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
-                Text("点击预测")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text("BET ON TRENDS")
+                    .font(.caption.monospaced())
+                    .foregroundColor(.neonBlue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().stroke(Color.neonBlue, lineWidth: 1))
             }
             .padding(.horizontal)
             
-            ScrollView {
-                LazyVStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
                     ForEach(nicheTrends) { trend in
                         TrendPredictionCard(trend: trend) {
                             selectedTrend = trend
@@ -100,17 +109,17 @@ struct PredictionView: View {
     
     // 我的预测记录
     private var myPredictions: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("我的预测记录")
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.title2.bold())
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
-                Text("\(predictions.count) 条记录")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text("\(predictions.count) RECORDS")
+                    .font(.caption.monospaced())
+                    .foregroundColor(.white.opacity(0.5))
             }
             .padding(.horizontal)
             
@@ -118,144 +127,122 @@ struct PredictionView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "crystal.ball")
                         .font(.system(size: 48))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.2))
                     
                     Text("还没有预测记录")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.5))
                     
-                    Text("开始预测你看好的小众趋势吧！")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                    Button("开始预测") {
+                        // 引导用户点击上方
+                    }
+                    .buttonStyle(NeonButtonStyle(color: .neonPurple))
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
+                .glassCard()
+                .padding(.horizontal)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(predictions) { prediction in
-                            PredictionHistoryCard(prediction: prediction)
-                        }
+                LazyVStack(spacing: 12) {
+                    ForEach(predictions) { prediction in
+                        PredictionHistoryCard(prediction: prediction)
                     }
-                    .padding(.horizontal)
                 }
+                .padding(.horizontal)
             }
         }
-        .frame(maxHeight: .infinity)
     }
     
     // 预测表单
     private func predictionSheet(trend: TrendItem) -> some View {
-        NavigationView {
+        ZStack {
+            Color.deepBackground.ignoresSafeArea()
+            
             VStack(spacing: 24) {
+                // 拖动条
+                Capsule()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 40, height: 4)
+                    .padding(.top)
+                
                 // 趋势信息
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text(trend.name)
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(.title.bold())
+                            .foregroundColor(.white)
                         
                         Spacer()
                         
                         Text(trend.category.rawValue)
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Capsule().fill(trend.zone.color))
                     }
                     
-                    Text(trend.description)
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                    
                     HStack {
-                        Label("当前热度: \(trend.heatScore)", systemImage: "thermometer")
+                        Label("热度: \(trend.heatScore)", systemImage: "flame.fill")
+                            .foregroundColor(.neonPink)
                         Spacer()
-                        Label("增长率: +\(String(format: "%.1f", trend.growthRate))%", 
-                              systemImage: "arrow.up.right")
+                        Label("增长: +\(String(format: "%.1f", trend.growthRate))%", 
+                              systemImage: "chart.line.uptrend.xyaxis")
+                            .foregroundColor(.neonGreen)
                     }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.subheadline.monospaced())
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
+                .glassCard()
+                
+                Text("你认为这个趋势会走向何方？")
+                    .font(.headline)
+                    .foregroundColor(.white)
                 
                 // 预测选项
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("你认为这个趋势会：")
-                        .font(.headline)
+                VStack(spacing: 12) {
+                    PredictionOption(
+                        title: "冲进先锋区",
+                        subtitle: "热度 > 60",
+                        points: "50 PTS",
+                        isSelected: true
+                    )
                     
-                    VStack(spacing: 12) {
-                        PredictionOption(
-                            title: "冲进先锋区（黄区）",
-                            subtitle: "1-2周内热度提升至60+",
-                            points: "获得50积分",
-                            isSelected: true
-                        )
-                        
-                        PredictionOption(
-                            title: "直达主流区（红区）",
-                            subtitle: "1个月内成为大热趋势",
-                            points: "获得200积分",
-                            isSelected: false
-                        )
-                        
-                        PredictionOption(
-                            title: "继续小众",
-                            subtitle: "保持现有热度区间",
-                            points: "获得10积分",
-                            isSelected: false
-                        )
-                    }
+                    PredictionOption(
+                        title: "直达主流区",
+                        subtitle: "热度 > 80",
+                        points: "200 PTS",
+                        isSelected: false
+                    )
                 }
                 
                 // 信心指数
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("信心指数: \(Int(confidence))%")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("信心指数")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(Int(confidence))%")
+                            .font(.title3.bold().monospaced())
+                            .foregroundColor(trend.zone.color)
+                    }
                     
                     Slider(value: $confidence, in: 0...100, step: 10)
                         .accentColor(trend.zone.color)
-                    
-                    HStack {
-                        Text("随便猜猜")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("非常确定")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
                 }
+                .padding()
+                .glassCard()
                 
                 Spacer()
                 
                 // 提交按钮
                 Button(action: submitPrediction) {
                     Text("提交预测")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(trend.zone.color)
-                        )
                 }
+                .buttonStyle(NeonSolidButtonStyle(color: trend.zone.color))
             }
             .padding()
-            .navigationTitle("趋势预测")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                leading: Button("取消") {
-                    showingPredictionSheet = false
-                }
-            )
         }
     }
     
@@ -266,7 +253,7 @@ struct PredictionView: View {
             trendName: trend.name,
             predictedDate: Date(),
             currentZone: trend.zone,
-            targetZone: .trending, // 简化处理，默认预测进入trending区
+            targetZone: .trending,
             confidence: Int(confidence),
             isCorrect: nil
         )
@@ -274,8 +261,6 @@ struct PredictionView: View {
         predictions.append(newPrediction)
         showingPredictionSheet = false
         selectedTrend = nil
-        
-        // TODO: 保存到本地或云端
     }
 }
 
@@ -283,7 +268,6 @@ struct PredictionView: View {
 struct StatCard: View {
     let title: String
     let value: String
-    let subtitle: String
     let color: Color
     let icon: String
     
@@ -292,26 +276,19 @@ struct StatCard: View {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
+                .glow(color: color, radius: 5)
             
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.title3.bold().monospaced())
+                .foregroundColor(.white)
             
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 2)
-        )
+        .padding(.vertical, 16)
+        .glassCard()
     }
 }
 
@@ -322,58 +299,39 @@ struct TrendPredictionCard: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                // 趋势图标
-                Circle()
-                    .fill(trend.zone.color.opacity(0.2))
-                    .frame(width: 50, height: 50)
-                    .overlay(
-                        Image(systemName: trend.category.icon)
-                            .foregroundColor(trend.zone.color)
-                    )
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(trend.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text(trend.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                    
-                    HStack {
-                        Text("热度 \(trend.heatScore)")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        
-                        Text("•")
-                            .foregroundColor(.secondary)
-                        
-                        Text("+\(String(format: "%.1f", trend.growthRate))%")
-                            .font(.caption2)
-                            .foregroundColor(.green)
-                    }
-                }
-                
-                Spacer()
-                
-                VStack(spacing: 4) {
-                    Image(systemName: "arrow.up.right.circle")
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: trend.category.icon)
                         .font(.title2)
                         .foregroundColor(trend.zone.color)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                
+                Text(trend.name)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                HStack {
+                    Text("+\(String(format: "%.1f", trend.growthRate))%")
+                        .font(.caption.monospaced())
+                        .foregroundColor(.neonGreen)
+                    
+                    Spacer()
                     
                     Text("预测")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.caption.bold())
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.white))
                 }
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemBackground))
-                    .shadow(color: .black.opacity(0.1), radius: 2)
-            )
+            .frame(width: 160, height: 140)
+            .glassCard()
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -387,35 +345,44 @@ struct PredictionOption: View {
     let isSelected: Bool
     
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .foregroundColor(isSelected ? .blue : .secondary)
-            
-            VStack(alignment: .leading, spacing: 2) {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.body)
-                    .fontWeight(.medium)
+                    .font(.body.bold())
+                    .foregroundColor(.white)
                 
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.6))
             }
             
             Spacer()
             
             Text(points)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.orange)
+                .font(.caption.bold().monospaced())
+                .foregroundColor(.neonYellow)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.neonYellow.opacity(0.2)))
+            
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.neonBlue)
+                    .font(.title3)
+            } else {
+                Image(systemName: "circle")
+                    .foregroundColor(.white.opacity(0.3))
+                    .font(.title3)
+            }
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? Color.blue : Color.secondary.opacity(0.3))
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isSelected ? Color.blue.opacity(0.1) : Color.clear)
-                )
+            RoundedRectangle(cornerRadius: 16)
+                .fill(isSelected ? Color.neonBlue.opacity(0.1) : Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(isSelected ? Color.neonBlue : Color.white.opacity(0.1), lineWidth: 1)
         )
     }
 }
@@ -425,68 +392,62 @@ struct PredictionHistoryCard: View {
     let prediction: UserPrediction
     
     var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(statusColor.opacity(0.2))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: statusIcon)
-                        .foregroundColor(statusColor)
-                )
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(statusColor.opacity(0.2))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: statusIcon)
+                    .foregroundColor(statusColor)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(prediction.trendName)
-                    .font(.body)
-                    .fontWeight(.medium)
+                    .font(.body.bold())
+                    .foregroundColor(.white)
                 
-                Text("预测时间: \(prediction.predictedDate, style: .date)")
+                Text(prediction.predictedDate, style: .date)
                     .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Text("信心指数: \(prediction.confidence)%")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.5))
             }
             
             Spacer()
             
             VStack(alignment: .trailing, spacing: 4) {
                 Text(statusText)
-                    .font(.caption)
-                    .fontWeight(.medium)
+                    .font(.caption.bold())
                     .foregroundColor(statusColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(statusColor.opacity(0.1)))
                 
-                if prediction.isCorrect == true {
-                    Text("+50积分")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
-                }
+                Text("信心 \(prediction.confidence)%")
+                    .font(.caption2.monospaced())
+                    .foregroundColor(.white.opacity(0.4))
             }
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 1)
-        )
+        .glassCard()
     }
     
     private var statusColor: Color {
-        guard let isCorrect = prediction.isCorrect else { return .orange }
-        return isCorrect ? .green : .red
+        guard let isCorrect = prediction.isCorrect else { return .neonBlue }
+        return isCorrect ? .neonGreen : .red
     }
     
     private var statusIcon: String {
-        guard let isCorrect = prediction.isCorrect else { return "clock" }
+        guard let isCorrect = prediction.isCorrect else { return "hourglass" }
         return isCorrect ? "checkmark" : "xmark"
     }
     
     private var statusText: String {
-        guard let isCorrect = prediction.isCorrect else { return "等待中" }
-        return isCorrect ? "预测成功" : "预测失败"
+        guard let isCorrect = prediction.isCorrect else { return "WAITING" }
+        return isCorrect ? "SUCCESS" : "FAILED"
     }
 }
 
 #Preview {
     PredictionView()
+        .preferredColorScheme(.dark)
 }
