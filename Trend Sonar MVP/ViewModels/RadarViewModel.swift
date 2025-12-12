@@ -49,6 +49,9 @@ class RadarViewModel: ObservableObject {
     
     /// 开始雷达扫描动画
     func startScanning() {
+        // 先停止现有动画，避免冲突
+        stopScanning()
+        
         isScanning = true
         withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
             scanAngle = 360

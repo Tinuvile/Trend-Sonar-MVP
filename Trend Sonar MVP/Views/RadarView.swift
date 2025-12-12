@@ -64,6 +64,10 @@ struct RadarView: View {
                 }
             }
         }
+        .onAppear {
+            // 确保动画在View出现时启动
+            viewModel.startScanning()
+        }
         .sheet(isPresented: $viewModel.showingStyleSetup) {
             StyleSetupView(styleProfile: $viewModel.styleProfile)
                 .preferredColorScheme(.dark) // 强制暗黑模式
