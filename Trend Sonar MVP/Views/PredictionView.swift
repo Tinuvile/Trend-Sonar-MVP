@@ -217,7 +217,7 @@ struct PredictionView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                         Spacer()
-                        Text("\(Int(confidence))%")
+                        Text("\(Int(viewModel.confidence))%")
                             .font(.title3.bold().monospaced())
                             .foregroundColor(trend.zone.color)
                     }
