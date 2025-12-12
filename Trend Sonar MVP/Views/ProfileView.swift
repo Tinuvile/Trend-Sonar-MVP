@@ -10,6 +10,8 @@ import SwiftUI
 struct ProfileView: View {
     @State private var user = UserProfile.sampleUser
     @State private var showingEditProfile = false
+    // 风格设置需要的状态
+    @State private var styleProfile = UserStyleProfile.defaultProfile 
     
     var body: some View {
         NavigationView {
@@ -107,10 +109,24 @@ struct ProfileView: View {
     // 成就勋章
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("我的成就")
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.horizontal)
+            HStack {
+                Text("我的成就")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                NavigationLink(destination: AchievementsDetailView(achievements: user.achievements)) {
+                    HStack(spacing: 4) {
+                        Text("查看全部")
+                            .font(.caption)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                    }
+                    .foregroundColor(.neonBlue)
+                }
+            }
+            .padding(.horizontal)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
@@ -126,9 +142,20 @@ struct ProfileView: View {
     // 设置选项
     private var settingsSection: some View {
         VStack(spacing: 12) {
-            SettingButton(icon: "person.crop.circle.badge.checkmark", title: "风格偏好设置", color: .neonPink) {}
-            SettingButton(icon: "bell.badge", title: "通知设置", color: .neonBlue) {}
-            SettingButton(icon: "gearshape", title: "通用设置", color: .white) {}
+            // 风格偏好设置
+            NavigationLink(destination: StyleSetupView(styleProfile: $styleProfile).navigationTitle("风格偏好").navigationBarTitleDisplayMode(.inline)) {
+                SettingRowContent(icon: "person.crop.circle.badge.checkmark", title: "风格偏好设置", color: .neonPink)
+            }
+            
+            // 通知设置
+            NavigationLink(destination: NotificationSettingsView()) {
+                SettingRowContent(icon: "bell.badge", title: "通知设置", color: .neonBlue)
+            }
+            
+            // 通用设置
+            NavigationLink(destination: GeneralSettingsView()) {
+                SettingRowContent(icon: "gearshape", title: "通用设置", color: .white)
+            }
         }
         .padding(.horizontal)
     }
@@ -210,33 +237,30 @@ struct Hexagon: Shape {
     }
 }
 
-// 设置按钮组件
-struct SettingButton: View {
+// 设置行内容组件
+struct SettingRowContent: View {
     let icon: String
     let title: String
     let color: Color
-    let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .frame(width: 24)
-                
-                Text(title)
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.3))
-            }
-            .padding()
-            .glassCard()
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            Text(title)
+                .font(.subheadline.bold())
+                .foregroundColor(.white)
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.3))
         }
+        .padding()
+        .glassCard()
     }
 }
 
