@@ -82,21 +82,21 @@ enum FavoriteBrand: String, CaseIterable {
     case acneStudios = "Acne Studios"
     case lemaire = "Lemaire"
     case jilSander = "Jil Sander"
-    case安踏 = "安踏"
-    case 李宁 = "李宁"
-    case 太平鸟 = "太平鸟"
-    case 江南布衣 = "江南布衣"
+    case anta = "安踏"
+    case lining = "李宁"
+    case peacebird = "太平鸟"
+    case jnby = "江南布衣"
     
     var logo: String {
         // 这里使用系统图标代替真实logo
         switch self {
-        case .nike, .adidas, .安踏, .李宁: return "sportscourt"
+        case .nike, .adidas, .anta, .lining: return "sportscourt"
         case .uniqlo, .muji: return "minus.circle"
-        case .zara, .hm, .太平鸟: return "bag"
+        case .zara, .hm, .peacebird: return "bag"
         case .chanel, .gucci, .celine: return "crown"
         case .converse, .vans: return "shoe"
         case .acneStudios, .lemaire, .jilSander: return "triangle"
-        case .江南布衣: return "leaf"
+        case .jnby: return "leaf"
         }
     }
     
@@ -104,12 +104,12 @@ enum FavoriteBrand: String, CaseIterable {
         switch self {
         case .uniqlo, .muji: return [.minimalist, .casual]
         case .zara, .hm: return [.casual, .elegant]
-        case .nike, .adidas, .安踏, .李宁: return [.sporty, .streetwear]
+        case .nike, .adidas, .anta, .lining: return [.sporty, .streetwear]
         case .chanel, .gucci, .celine: return [.elegant, .romantic]
         case .converse, .vans: return [.streetwear, .casual]
         case .acneStudios, .lemaire, .jilSander: return [.minimalist, .edgy]
-        case .太平鸟: return [.casual, .preppy]
-        case .江南布衣: return [.bohemian, .vintage]
+        case .peacebird: return [.casual, .preppy]
+        case .jnby: return [.bohemian, .vintage]
         }
     }
 }
