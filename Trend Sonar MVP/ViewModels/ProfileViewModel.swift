@@ -14,15 +14,24 @@ class ProfileViewModel: ObservableObject {
     @Published var styleProfile: UserStyleProfile = UserStyleProfile()
     @Published var showingEditProfile = false
     
+    // MARK: - Editable User Properties
+    @Published var editableUsername: String = ""
+    @Published var editableBio: String = ""
+    
     // MARK: - Data Manager
     private let trendManager = TrendDataManager.shared
+    
+    // MARK: - Initialization
+    init() {
+        loadUserEditableData()
+    }
     
     // MARK: - Computed Properties
     var user: UserProfile {
         // 动态计算用户数据，基于TrendDataManager的实时统计
         UserProfile(
-            username: UserDefaults.standard.string(forKey: "userName") ?? "时尚探索者",
-            bio: UserDefaults.standard.string(forKey: "userBio") ?? "追寻下一个时尚风潮，享受发现的乐趣",
+            username: editableUsername.isEmpty ? "时尚探索者" : editableUsername,
+            bio: editableBio.isEmpty ? "追寻下一个时尚风潮，享受发现的乐趣" : editableBio,
             level: calculateLevel(for: trendManager.calculateUserPoints()),
             totalPoints: trendManager.calculateUserPoints(),
             successfulPredictions: trendManager.getUserPredictionHistory().filter { $0.isCorrect == true }.count,
@@ -84,10 +93,16 @@ class ProfileViewModel: ObservableObject {
         showingEditProfile = false
     }
     
+    /// 加载用户可编辑数据
+    private func loadUserEditableData() {
+        editableUsername = UserDefaults.standard.string(forKey: "userName") ?? "时尚探索者"
+        editableBio = UserDefaults.standard.string(forKey: "userBio") ?? "追寻下一个时尚风潮，享受发现的乐趣"
+    }
+    
     /// 更新用户资料（保存到本地存储）
-    func updateUserProfile(username: String, bio: String) {
-        UserDefaults.standard.set(username, forKey: "userName")
-        UserDefaults.standard.set(bio, forKey: "userBio")
+    func updateUserProfile() {
+        UserDefaults.standard.set(editableUsername, forKey: "userName")
+        UserDefaults.standard.set(editableBio, forKey: "userBio")
         
         // 触发UI更新
         objectWillChange.send()

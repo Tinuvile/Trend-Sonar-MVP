@@ -41,7 +41,11 @@ struct ProfileView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showingEditProfile) {
-                EditProfileView(user: $viewModel.user)
+                EditProfileView(
+                    username: $viewModel.editableUsername,
+                    bio: $viewModel.editableBio,
+                    onSave: viewModel.updateUserProfile
+                )
             }
         }
     }

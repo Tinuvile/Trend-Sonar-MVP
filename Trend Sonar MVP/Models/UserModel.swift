@@ -92,10 +92,12 @@ struct Achievement: Identifiable {
 
 // MARK: - 编辑资料视图
 struct EditProfileView: View {
-    @Binding var user: UserProfile
+    @Binding var username: String
+    @Binding var bio: String
+    let onSave: () -> Void
     @Environment(\.presentationMode) var presentationMode
-    @State private var username: String = ""
-    @State private var bio: String = ""
+    @State private var localUsername: String = ""
+    @State private var localBio: String = ""
     
     var body: some View {
         NavigationView {
@@ -104,9 +106,9 @@ struct EditProfileView: View {
                 
                 Form {
                     Section("基本信息") {
-                        TextField("用户名", text: $username)
+                        TextField("用户名", text: $localUsername)
                             .foregroundColor(.white)
-                        TextField("个人简介", text: $bio, axis: .vertical)
+                        TextField("个人简介", text: $localBio, axis: .vertical)
                             .lineLimit(3...6)
                             .foregroundColor(.white)
                     }
@@ -142,12 +144,17 @@ struct EditProfileView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
-            username = user.username
-            bio = user.bio
+            localUsername = username
+            localBio = bio
         }
     }
     
     private func saveChanges() {
-        // 这里保存更改，实际项目中会更新真实数据
+        // 将本地编辑的值同步回Binding
+        username = localUsername
+        bio = localBio
+        
+        // 调用保存回调
+        onSave()
     }
 }
