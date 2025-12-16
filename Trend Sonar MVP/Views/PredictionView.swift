@@ -199,19 +199,30 @@ struct PredictionView: View {
                         .font(.headline)
                         .foregroundColor(.white)
                     
-                    HStack {
-                        Text("投注: \(viewModel.betAmount) 声纳币")
-                            .font(.caption)
-                            .foregroundColor(.neonYellow)
+                    VStack(spacing: 6) {
+                        HStack {
+                            Text("投注: \(viewModel.betAmount) 声纳币")
+                                .font(.caption)
+                                .foregroundColor(.neonYellow)
+                            
+                            Spacer()
+                            
+                            Text("潜在收益: \(viewModel.potentialReward) 声纳币")
+                                .font(.caption.bold())
+                                .foregroundColor(.neonGreen)
+                        }
                         
-                        Spacer()
-                        
-                        Text("潜在收益: \(viewModel.potentialReward) 声纳币")
-                            .font(.caption.bold())
-                            .foregroundColor(.neonGreen)
+                        // 收益分解说明
+                        HStack {
+                            Text(viewModel.rewardBreakdown)
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.6))
+                            
+                            Spacer()
+                        }
                     }
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 8)
                     .background(Capsule().fill(Color.black.opacity(0.3)))
                 }
                 
@@ -271,18 +282,61 @@ struct PredictionView: View {
                     }
                     
                     // 信心指数
-                    HStack {
-                        Text("信心指数")
-                            .font(.subheadline.bold())
-                            .foregroundColor(.white)
-                        Spacer()
-                        Text("\(Int(viewModel.confidence))%")
-                            .font(.subheadline.bold().monospaced())
-                            .foregroundColor(trend.zone.color)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("信心指数")
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white)
+                            Spacer()
+                            Text("\(Int(viewModel.confidence))%")
+                                .font(.subheadline.bold().monospaced())
+                                .foregroundColor(trend.zone.color)
+                        }
+                        
+                        Slider(value: $viewModel.confidence, in: 0...100, step: 10)
+                            .accentColor(trend.zone.color)
+                        
+                        HStack {
+                            Image(systemName: viewModel.confidenceImpact.icon)
+                                .foregroundColor(viewModel.confidenceImpact.color)
+                                .font(.caption)
+                            
+                            Text(viewModel.confidenceImpact.message)
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            Spacer()
+                        }
+                        
+                        // 风险提示条
+                        HStack(spacing: 8) {
+                            Text("风险")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            // 风险可视化条
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(height: 4)
+                                    
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(LinearGradient(
+                                            colors: [.neonGreen, .neonYellow, .neonPink],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        ))
+                                        .frame(width: geometry.size.width * CGFloat(viewModel.confidence / 100), height: 4)
+                                }
+                            }
+                            .frame(height: 4)
+                            
+                            Text("收益")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
                     }
-                    
-                    Slider(value: $viewModel.confidence, in: 0...100, step: 10)
-                        .accentColor(trend.zone.color)
                 }
                 .padding()
                 .glassCard()

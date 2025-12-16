@@ -70,6 +70,45 @@ class PredictionViewModel: ObservableObject {
         return "\(reward)"
     }
     
+    /// 收益分解说明
+    var rewardBreakdown: String {
+        guard let trend = selectedTrend else { return "" }
+        
+        let baseMultiplier: Int
+        switch (trend.zone, selectedTargetZone) {
+        case (.niche, .trending): baseMultiplier = 3
+        case (.niche, .mainstream): baseMultiplier = 5
+        case (.trending, .mainstream): baseMultiplier = 2
+        default: baseMultiplier = 2
+        }
+        
+        let confidenceBonus = confidence > 80 ? 1 : 0
+        
+        if confidenceBonus > 0 {
+            return "\(betAmount) × \(baseMultiplier)倍(难度) + \(confidenceBonus)倍(信心≥80%)"
+        } else {
+            return "\(betAmount) × \(baseMultiplier)倍(难度) | 信心≥80%可获得额外奖励"
+        }
+    }
+    
+    /// 信心指数影响提示
+    var confidenceImpact: (icon: String, color: Color, message: String) {
+        let successRate = Int(confidence * 0.7 + 20)
+        
+        switch Int(confidence) {
+        case 0..<50:
+            return ("exclamationmark.triangle.fill", .orange, "预测成功率: \(successRate)% | 低风险低收益")
+        case 50..<80:
+            return ("info.circle.fill", .blue, "预测成功率: \(successRate)% | 平衡风险收益")
+        case 80..<90:
+            return ("star.fill", .neonGreen, "预测成功率: \(successRate)% | 获得额外收益倍数!")
+        case 90...100:
+            return ("flame.fill", .neonPink, "预测成功率: \(successRate)% | 高风险高收益！")
+        default:
+            return ("questionmark.circle", .gray, "调整信心指数")
+        }
+    }
+    
     // MARK: - Methods
     
     /// 选择趋势进行预测
