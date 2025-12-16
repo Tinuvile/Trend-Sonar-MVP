@@ -362,6 +362,35 @@ struct StyleSelectionCard: View {
     }
 }
 
+// MARK: - 品牌图标组件
+struct BrandIcon: View {
+    let brand: FavoriteBrand
+    let size: CGFloat
+    let selectedColor: Color
+    let unselectedColor: Color
+    
+    init(brand: FavoriteBrand, size: CGFloat = 20, selectedColor: Color = .white, unselectedColor: Color = .blue) {
+        self.brand = brand
+        self.size = size
+        self.selectedColor = selectedColor
+        self.unselectedColor = unselectedColor
+    }
+    
+    var body: some View {
+        // 尝试加载自定义图标，失败则使用系统图标
+        if let customLogoName = brand.customLogoName,
+           let customImage = UIImage(named: customLogoName) {
+            Image(uiImage: customImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            Image(systemName: brand.systemFallbackIcon)
+                .font(.system(size: size * 0.8))
+        }
+    }
+}
+
 // 品牌选择卡片
 struct BrandSelectionCard: View {
     let brand: FavoriteBrand
@@ -371,9 +400,13 @@ struct BrandSelectionCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: brand.logo)
-                    .font(.title3)
-                    .foregroundColor(isSelected ? .white : .blue)
+                BrandIcon(
+                    brand: brand, 
+                    size: 20,
+                    selectedColor: .white,
+                    unselectedColor: .blue
+                )
+                .foregroundColor(isSelected ? .white : .blue)
                 
                 Text(brand.rawValue)
                     .font(.body)

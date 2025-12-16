@@ -557,6 +557,32 @@ struct MyStyleTagCard: View {
     }
 }
 
+// MARK: - 品牌图标组件
+struct BrandIcon: View {
+    let brand: FavoriteBrand
+    let size: CGFloat
+    
+    init(brand: FavoriteBrand, size: CGFloat = 20) {
+        self.brand = brand
+        self.size = size
+    }
+    
+    var body: some View {
+        // 尝试加载自定义图标，失败则使用系统图标
+        if let customLogoName = brand.customLogoName,
+           let customImage = UIImage(named: customLogoName) {
+            Image(uiImage: customImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            Image(systemName: brand.systemFallbackIcon)
+                .font(.system(size: size * 0.8))
+                .foregroundColor(.white)
+        }
+    }
+}
+
 // MARK: - 品牌卡片
 struct MyBrandCard: View {
     let brand: FavoriteBrand
@@ -568,9 +594,7 @@ struct MyBrandCard: View {
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 50, height: 50)
                 
-                Image(systemName: brand.logo)
-                    .font(.title2)
-                    .foregroundColor(.white)
+                BrandIcon(brand: brand, size: 24)
             }
             
             Text(brand.rawValue)

@@ -88,15 +88,55 @@ enum FavoriteBrand: String, CaseIterable {
     case jnby = "江南布衣"
     
     var logo: String {
-        // 这里使用系统图标代替真实logo
+        // 返回品牌图标名称，优先使用自定义图标，fallback到系统图标
+        return customLogoName ?? systemFallbackIcon
+    }
+    
+    /// 自定义品牌图标名称（需要添加到Assets.xcassets）
+    var customLogoName: String? {
         switch self {
-        case .nike, .adidas, .anta, .lining: return "sportscourt"
-        case .uniqlo, .muji: return "minus.circle"
-        case .zara, .hm, .peacebird: return "bag"
-        case .chanel, .gucci, .celine: return "crown"
-        case .converse, .vans: return "shoe"
-        case .acneStudios, .lemaire, .jilSander: return "triangle"
-        case .jnby: return "leaf"
+        case .nike: return "nike-logo"
+        case .adidas: return "adidas-logo"
+        case .uniqlo: return "uniqlo-logo"
+        case .zara: return "zara-logo"
+        case .hm: return "hm-logo"
+        case .muji: return "muji-logo"
+        case .chanel: return "chanel-logo"
+        case .gucci: return "gucci-logo"
+        case .converse: return "converse-logo"
+        case .vans: return "vans-logo"
+        case .celine: return "celine-logo"
+        case .acneStudios: return "acnestudios-logo"
+        case .lemaire: return "lemaire-logo"
+        case .jilSander: return "jilsander-logo"
+        case .anta: return "anta-logo"
+        case .lining: return "lining-logo"
+        case .peacebird: return "peacebird-logo"
+        case .jnby: return "jnby-logo"
+        }
+    }
+    
+    /// 系统图标作为备用方案
+    var systemFallbackIcon: String {
+        switch self {
+        case .nike: return "bolt.fill"
+        case .adidas: return "triangle.fill"
+        case .anta: return "flame.fill"
+        case .lining: return "star.fill"
+        case .uniqlo: return "square.grid.2x2.fill"
+        case .zara: return "diamond.fill"
+        case .hm: return "hexagon.fill"
+        case .peacebird: return "bird.fill"
+        case .muji: return "minus.circle.fill"
+        case .chanel: return "crown.fill"
+        case .gucci: return "star.circle.fill"
+        case .celine: return "circle.hexagonpath.fill"
+        case .converse: return "star.square.fill"
+        case .vans: return "checkmark.square.fill"
+        case .acneStudios: return "a.circle.fill"
+        case .lemaire: return "l.circle.fill"
+        case .jilSander: return "j.circle.fill"
+        case .jnby: return "leaf.fill"
         }
     }
     
