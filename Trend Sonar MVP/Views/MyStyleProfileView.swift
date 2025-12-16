@@ -10,8 +10,7 @@ import SwiftUI
 struct MyStyleProfileView: View {
     @StateObject private var profileViewModel = ProfileViewModel()
     @StateObject private var trendManager = TrendDataManager.shared
-    @State private var selectedStyleForDetail: StyleType?
-    @State private var showingStyleSetup = false
+    @State private var selectedTrend: TrendItem?
     
     var body: some View {
         ZStack {
@@ -51,6 +50,10 @@ struct MyStyleProfileView: View {
         }
         .sheet(isPresented: $showingStyleSetup) {
             StyleSetupView(styleProfile: $profileViewModel.styleProfile)
+                .preferredColorScheme(.dark)
+        }
+        .sheet(item: $selectedTrend) { trend in
+            TrendDetailSheet(trend: trend, styleProfile: profileViewModel.styleProfile)
                 .preferredColorScheme(.dark)
         }
     }
@@ -138,6 +141,9 @@ struct MyStyleProfileView: View {
                     .glow(color: compatibilityColorForScore(compatibilityScore), radius: 4)
             }
             .position(position)
+            .onTapGesture {
+                selectedTrend = trend
+            }
         }
     }
     
