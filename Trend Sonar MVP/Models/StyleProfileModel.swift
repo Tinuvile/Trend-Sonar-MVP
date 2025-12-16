@@ -87,17 +87,34 @@ enum FavoriteBrand: String, CaseIterable {
     case peacebird = "太平鸟"
     case jnby = "江南布衣"
     
-    var logo: String {
-        // 这里使用系统图标代替真实logo
+    var iconName: String {
         switch self {
-        case .nike, .adidas, .anta, .lining: return "sportscourt"
-        case .uniqlo, .muji: return "minus.circle"
-        case .zara, .hm, .peacebird: return "bag"
+        case .nike: return "nike"
+        case .adidas: return "adidas"
+        case .anta: return "anta"
+        case .lining: return "sportscourt" // Keep system icon for now as no asset provided
+        case .uniqlo: return "uniqlo"
+        case .muji: return "minus.circle"
+        case .zara: return "zara"
+        case .hm: return "handm"
+        case .peacebird: return "bag"
         case .chanel, .gucci, .celine: return "crown"
         case .converse, .vans: return "shoe"
         case .acneStudios, .lemaire, .jilSander: return "triangle"
         case .jnby: return "leaf"
         }
+    }
+    
+    var isSystemImage: Bool {
+        switch self {
+        case .nike, .adidas, .anta, .uniqlo, .zara, .hm: return false
+        default: return true
+        }
+    }
+    
+    // Keeping this for backward compatibility if needed, but we should switch to using the properties above
+    var logo: String {
+        return iconName
     }
     
     var associatedStyles: [StyleType] {

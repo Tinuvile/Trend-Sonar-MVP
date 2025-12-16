@@ -371,9 +371,18 @@ struct BrandSelectionCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Image(systemName: brand.logo)
-                    .font(.title3)
-                    .foregroundColor(isSelected ? .white : .blue)
+                if brand.isSystemImage {
+                    Image(systemName: brand.iconName)
+                        .font(.title3)
+                        .foregroundColor(isSelected ? .white : .blue)
+                } else {
+                    Image(brand.iconName)
+                        .resizable()
+                        .renderingMode(.template)
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(isSelected ? .white : .blue)
+                }
                 
                 Text(brand.rawValue)
                     .font(.body)

@@ -568,9 +568,18 @@ struct MyBrandCard: View {
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 50, height: 50)
                 
-                Image(systemName: brand.logo)
-                    .font(.title2)
-                    .foregroundColor(.white)
+                if brand.isSystemImage {
+                    Image(systemName: brand.iconName)
+                        .font(.title2)
+                        .foregroundColor(.white)
+                } else {
+                    Image(brand.iconName)
+                        .resizable()
+                        .renderingMode(.template)
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(.white)
+                }
             }
             
             Text(brand.rawValue)
