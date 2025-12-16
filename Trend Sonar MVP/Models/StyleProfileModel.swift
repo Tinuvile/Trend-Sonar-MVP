@@ -92,23 +92,28 @@ enum FavoriteBrand: String, CaseIterable {
         case .nike: return "nike"
         case .adidas: return "adidas"
         case .anta: return "anta"
-        case .lining: return "sportscourt" // Keep system icon for now as no asset provided
+        case .lining: return "lining"
         case .uniqlo: return "uniqlo"
-        case .muji: return "minus.circle"
+        case .muji: return "muji"
         case .zara: return "zara"
         case .hm: return "handm"
-        case .peacebird: return "bag"
-        case .chanel, .gucci, .celine: return "crown"
-        case .converse, .vans: return "shoe"
-        case .acneStudios, .lemaire, .jilSander: return "triangle"
-        case .jnby: return "leaf"
+        case .peacebird: return "bag" // Still system icon
+        case .chanel: return "chanel"
+        case .gucci: return "gucci"
+        case .celine: return "celine"
+        case .converse: return "converse"
+        case .vans: return "vans"
+        case .acneStudios: return "acnestudios"
+        case .lemaire: return "lemaire"
+        case .jilSander: return "jilsander"
+        case .jnby: return "leaf" // Still system icon
         }
     }
     
     var isSystemImage: Bool {
         switch self {
-        case .nike, .adidas, .anta, .uniqlo, .zara, .hm: return false
-        default: return true
+        case .peacebird, .jnby: return true
+        default: return false
         }
     }
     
