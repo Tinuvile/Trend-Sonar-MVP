@@ -122,8 +122,6 @@ struct UserStyleProfile {
     var bodyType: BodyType
     var colorPreferences: [Color]
     var budgetRange: BudgetRange
-    var personalPhoto: UIImage?
-    var isPhotoBased: Bool
     var lastUpdated: Date
     
     init() {
@@ -132,8 +130,6 @@ struct UserStyleProfile {
         self.bodyType = .balanced
         self.colorPreferences = []
         self.budgetRange = .medium
-        self.personalPhoto = nil
-        self.isPhotoBased = false
         self.lastUpdated = Date()
     }
     

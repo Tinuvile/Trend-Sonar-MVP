@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import PhotosUI
 
 struct StyleSetupView: View {
     @Binding var styleProfile: UserStyleProfile
@@ -17,18 +16,14 @@ struct StyleSetupView: View {
     @State private var selectedBodyType: BodyType = .balanced
     @State private var selectedBudget: BudgetRange = .medium
     @State private var setupMethod: SetupMethod = .questionnaire
-    @State private var showingImagePicker = false
-    @State private var selectedPhoto: UIImage?
     
     enum SetupMethod: String, CaseIterable {
         case questionnaire = "问卷调研"
-        case photo = "照片分析"
         case brands = "品牌偏好"
         
         var icon: String {
             switch self {
             case .questionnaire: return "list.clipboard"
-            case .photo: return "camera.fill"
             case .brands: return "bag.fill"
             }
         }
@@ -36,7 +31,6 @@ struct StyleSetupView: View {
         var description: String {
             switch self {
             case .questionnaire: return "通过问卷了解你的风格偏好"
-            case .photo: return "上传照片，AI分析你的风格"
             case .brands: return "选择喜欢的品牌，匹配风格"
             }
         }
@@ -56,8 +50,6 @@ struct StyleSetupView: View {
                     switch setupMethod {
                     case .questionnaire:
                         questionnaireSection
-                    case .photo:
-                        photoAnalysisSection
                     case .brands:
                         brandSelectionSection
                     }
@@ -76,9 +68,6 @@ struct StyleSetupView: View {
         }
         .onAppear {
             loadCurrentProfile()
-        }
-        .sheet(isPresented: $showingImagePicker) {
-            ImagePicker(selectedImage: $selectedPhoto)
         }
     }
     
@@ -140,71 +129,6 @@ struct StyleSetupView: View {
             
             // 预算范围
             budgetSection
-        }
-    }
-    
-    // 照片分析部分
-    private var photoAnalysisSection: some View {
-        VStack(spacing: 16) {
-            Text("上传你的日常照片")
-                .font(.headline)
-                .fontWeight(.bold)
-            
-            Button(action: {
-                showingImagePicker = true
-            }) {
-                if let photo = selectedPhoto {
-                    Image(uiImage: photo)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 200, height: 200)
-                        .clipped()
-                        .cornerRadius(12)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 48))
-                            .foregroundColor(.blue)
-                        
-                        Text("点击上传照片")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                        
-                        Text("我们将分析你的穿搭风格")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(width: 200, height: 200)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.blue, style: StrokeStyle(lineWidth: 2, dash: [5]))
-                    )
-                }
-            }
-            
-            if selectedPhoto != nil {
-                VStack(spacing: 12) {
-                    Text("AI 分析结果")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                    
-                    HStack {
-                        AnalysisResultTag(style: .minimalist, confidence: 85)
-                        AnalysisResultTag(style: .casual, confidence: 72)
-                        AnalysisResultTag(style: .elegant, confidence: 45)
-                    }
-                    
-                    Text("基于照片分析，我们推测你偏好简约和休闲风格")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemGray6))
-                )
-            }
         }
     }
     
@@ -332,8 +256,6 @@ struct StyleSetupView: View {
         switch setupMethod {
         case .questionnaire:
             return !selectedStyles.isEmpty
-        case .photo:
-            return selectedPhoto != nil
         case .brands:
             return selectedBrands.count >= 2
         }
@@ -345,7 +267,6 @@ struct StyleSetupView: View {
         selectedBrands = Set(styleProfile.favoriteBrands)
         selectedBodyType = styleProfile.bodyType
         selectedBudget = styleProfile.budgetRange
-        selectedPhoto = styleProfile.personalPhoto
     }
     
     // 保存配置
@@ -354,8 +275,6 @@ struct StyleSetupView: View {
         styleProfile.favoriteBrands = Array(selectedBrands)
         styleProfile.bodyType = selectedBodyType
         styleProfile.budgetRange = selectedBudget
-        styleProfile.personalPhoto = selectedPhoto
-        styleProfile.isPhotoBased = setupMethod == .photo
         styleProfile.lastUpdated = Date()
         
         presentationMode.wrappedValue.dismiss()
@@ -548,71 +467,6 @@ struct BudgetCard: View {
     }
 }
 
-// AI分析结果标签
-struct AnalysisResultTag: View {
-    let style: StyleType
-    let confidence: Int
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(style.rawValue)
-                .font(.caption)
-                .fontWeight(.medium)
-            
-            Text("\(confidence)%")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(style.color.opacity(0.2))
-        )
-        .overlay(
-            Capsule()
-                .stroke(style.color, lineWidth: 1)
-        )
-    }
-}
-
-// 图片选择器
-struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var selectedImage: UIImage?
-    @Environment(\.presentationMode) var presentationMode
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = .photoLibrary
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
-        
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.selectedImage = image
-            }
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-    }
-}
 
 #Preview {
     StyleSetupView(styleProfile: .constant(UserStyleProfile()))
