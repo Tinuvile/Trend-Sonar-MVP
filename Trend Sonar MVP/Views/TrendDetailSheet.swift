@@ -94,14 +94,14 @@ struct TrendDetailSheet: View {
     
     private var statsSection: some View {
         HStack(spacing: 20) {
-            StatCard(
+            TrendStatCard(
                 title: "热度",
                 value: "\(trend.heatScore)",
                 icon: "flame.fill",
                 color: .orange
             )
             
-            StatCard(
+            TrendStatCard(
                 title: "增长率",
                 value: "+\(String(format: "%.1f", trend.growthRate))%",
                 icon: "chart.line.uptrend.xyaxis",
@@ -135,7 +135,7 @@ struct TrendDetailSheet: View {
     }
 }
 
-struct StatCard: View {
+struct TrendStatCard: View {
     let title: String
     let value: String
     let icon: String

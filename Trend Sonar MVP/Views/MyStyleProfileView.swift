@@ -10,6 +10,8 @@ import SwiftUI
 struct MyStyleProfileView: View {
     @StateObject private var profileViewModel = ProfileViewModel()
     @StateObject private var trendManager = TrendDataManager.shared
+    @State private var selectedStyleForDetail: StyleType?
+    @State private var showingStyleSetup = false
     @State private var selectedTrend: TrendItem?
     
     var body: some View {
