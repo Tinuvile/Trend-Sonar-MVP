@@ -374,14 +374,14 @@ struct BrandSelectionCard: View {
                 if brand.isSystemImage {
                     Image(systemName: brand.iconName)
                         .font(.title3)
-                        .foregroundColor(isSelected ? .white : .blue)
+                        .foregroundColor(isSelected ? Color.white : Color.blue)
                 } else {
                     Image(brand.iconName)
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
                         .frame(width: 24, height: 24)
-                        .foregroundColor(isSelected ? .white : .blue)
+                        .foregroundColor(isSelected ? Color.white : Color.blue)
                 }
                 
                 Text(brand.rawValue)

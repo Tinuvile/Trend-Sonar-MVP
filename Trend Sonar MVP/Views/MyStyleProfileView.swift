@@ -571,14 +571,14 @@ struct MyBrandCard: View {
                 if brand.isSystemImage {
                     Image(systemName: brand.iconName)
                         .font(.title2)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.white)
                 } else {
                     Image(brand.iconName)
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
                         .frame(width: 24, height: 24)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.white)
                 }
             }
             
