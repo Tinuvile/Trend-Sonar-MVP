@@ -2,7 +2,7 @@
 //  ProfileViewModel.swift
 //  Trend Sonar MVP
 //
-//  Created by admin on 2025/12/12.
+//  Created by admin on 2025/12/16.
 //
 
 import SwiftUI
@@ -11,20 +11,65 @@ import Combine
 @MainActor
 class ProfileViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var user: UserProfile = UserProfile.sampleUser
+    @Published var styleProfile: UserStyleProfile = UserStyleProfile()
     @Published var showingEditProfile = false
-    @Published var styleProfile = UserStyleProfile.defaultProfile
+    
+    // MARK: - Data Manager
+    private let trendManager = TrendDataManager.shared
     
     // MARK: - Computed Properties
-    var unlockedAchievements: [Achievement] {
-        user.achievements.filter { $0.isUnlocked }
+    var user: UserProfile {
+        // 动态计算用户数据，基于TrendDataManager的实时统计
+        UserProfile(
+            username: UserDefaults.standard.string(forKey: "userName") ?? "时尚探索者",
+            bio: UserDefaults.standard.string(forKey: "userBio") ?? "追寻下一个时尚风潮，享受发现的乐趣",
+            level: calculateLevel(for: trendManager.calculateUserPoints()),
+            totalPoints: trendManager.calculateUserPoints(),
+            successfulPredictions: trendManager.getUserPredictionHistory().filter { $0.isCorrect == true }.count,
+            accuracyRate: trendManager.calculateAccuracyRate(),
+            achievements: Achievement.sampleAchievements, // 简化处理，使用固定成就
+            recentPredictions: Array(trendManager.getUserPredictionHistory().prefix(5))
+        )
     }
     
-    var achievementProgress: Double {
-        let totalAchievements = user.achievements.count
-        let unlockedCount = unlockedAchievements.count
-        guard totalAchievements > 0 else { return 0 }
-        return Double(unlockedCount) / Double(totalAchievements)
+    // MARK: - Computed Properties
+    
+    /// 获取用户等级标题
+    func getLevelTitle() -> String {
+        switch user.level {
+        case 1: return "新手探索者"
+        case 2: return "趋势观察员"
+        case 3: return "时尚预测师"
+        case 4: return "潮流引领者"
+        case 5: return "时尚大师"
+        default: return "传奇预言家"
+        }
+    }
+    
+    /// 获取下一等级所需经验
+    func getExperienceToNextLevel() -> Int {
+        let requiredPoints = getRequiredPointsForLevel(user.level + 1)
+        return max(0, requiredPoints - user.totalPoints)
+    }
+    
+    /// 获取当前等级进度 (0.0-1.0)
+    func getLevelProgress() -> Double {
+        let currentLevelPoints = getRequiredPointsForLevel(user.level)
+        let nextLevelPoints = getRequiredPointsForLevel(user.level + 1)
+        let currentProgress = user.totalPoints - currentLevelPoints
+        let totalNeeded = nextLevelPoints - currentLevelPoints
+        
+        return totalNeeded > 0 ? Double(currentProgress) / Double(totalNeeded) : 1.0
+    }
+    
+    /// 获取解锁的成就数量
+    func getUnlockedAchievementsCount() -> Int {
+        user.achievements.filter { $0.isUnlocked }.count
+    }
+    
+    /// 获取总成就数量
+    func getTotalAchievementsCount() -> Int {
+        user.achievements.count
     }
     
     // MARK: - Methods
@@ -39,89 +84,62 @@ class ProfileViewModel: ObservableObject {
         showingEditProfile = false
     }
     
-    /// 更新用户信息
-    func updateUser(username: String, bio: String) {
-        // 在真实应用中，这里会调用API更新用户信息
-        // 现在只是模拟更新
-        user = UserProfile(
-            username: username,
-            bio: bio,
-            level: user.level,
-            totalPoints: user.totalPoints,
-            successfulPredictions: user.successfulPredictions,
-            accuracyRate: user.accuracyRate,
-            achievements: user.achievements,
-            recentPredictions: user.recentPredictions
-        )
+    /// 更新用户资料（保存到本地存储）
+    func updateUserProfile(username: String, bio: String) {
+        UserDefaults.standard.set(username, forKey: "userName")
+        UserDefaults.standard.set(bio, forKey: "userBio")
+        
+        // 触发UI更新
+        objectWillChange.send()
     }
     
-    /// 更新风格配置
-    func updateStyleProfile(_ newProfile: UserStyleProfile) {
-        styleProfile = newProfile
-    }
     
-    /// 获取用户等级标题
-    func getLevelTitle() -> String {
-        switch user.level {
-        case 1...2:
-            return "时尚新手"
-        case 3...5:
-            return "时尚探索者"
-        case 6...10:
-            return "时尚达人"
-        default:
-            return "时尚大师"
+    // MARK: - Private Methods
+    
+    /// 计算等级
+    private func calculateLevel(for points: Int) -> Int {
+        switch points {
+        case 0..<100: return 1
+        case 100..<300: return 2
+        case 300..<600: return 3
+        case 600..<1000: return 4
+        case 1000..<1500: return 5
+        default: return 6
         }
     }
     
-    /// 计算距离下一等级的经验值
-    func getExperienceToNextLevel() -> Int {
-        let nextLevelThreshold = user.level * 500 // 每级需要500积分
-        return max(0, nextLevelThreshold - user.totalPoints)
-    }
-    
-    /// 检查是否解锁新成就
-    func checkForNewAchievements() {
-        // 在真实应用中，这里会根据用户行为检查是否解锁新成就
-        // 比如：
-        // - 预测成功达到一定次数
-        // - 连续登录天数
-        // - 提名趋势被采纳等
-    }
-    
-    /// 模拟解锁成就
-    func unlockAchievement(_ achievementId: String) {
-        if let index = user.achievements.firstIndex(where: { achievement in
-            achievement.title == achievementId && !achievement.isUnlocked
-        }) {
-            let updatedAchievement = Achievement(
-                title: user.achievements[index].title,
-                icon: user.achievements[index].icon,
-                color: user.achievements[index].color,
-                description: user.achievements[index].description,
-                isUnlocked: true
-            )
-            
-            var updatedAchievements = user.achievements
-            updatedAchievements[index] = updatedAchievement
-            
-            user = UserProfile(
-                username: user.username,
-                bio: user.bio,
-                level: user.level,
-                totalPoints: user.totalPoints,
-                successfulPredictions: user.successfulPredictions,
-                accuracyRate: user.accuracyRate,
-                achievements: updatedAchievements,
-                recentPredictions: user.recentPredictions
-            )
+    /// 获取特定等级所需积分
+    private func getRequiredPointsForLevel(_ level: Int) -> Int {
+        switch level {
+        case 1: return 0
+        case 2: return 100
+        case 3: return 300
+        case 4: return 600
+        case 5: return 1000
+        case 6: return 1500
+        default: return 2000
         }
     }
     
-    /// 获取成就完成百分比文本
-    func getAchievementProgressText() -> String {
-        let completed = unlockedAchievements.count
-        let total = user.achievements.count
-        return "\(completed)/\(total)"
+    /// 计算准确率
+    private func calculateAccuracyRate(successful: Int, total: Int) -> Int {
+        guard total > 0 else { return 0 }
+        return Int((Double(successful) / Double(total)) * 100)
+    }
+    
+}
+
+// MARK: - Sample Data Extensions
+extension ProfileViewModel {
+    /// 创建样本数据用于测试
+    static func createSampleViewModel() -> ProfileViewModel {
+        let viewModel = ProfileViewModel()
+        
+        // 可以在这里设置测试数据
+        viewModel.styleProfile = UserStyleProfile()
+        viewModel.styleProfile.preferredStyles = [.minimalist, .streetwear, .casual]
+        viewModel.styleProfile.favoriteBrands = [.uniqlo, .nike, .zara]
+        
+        return viewModel
     }
 }

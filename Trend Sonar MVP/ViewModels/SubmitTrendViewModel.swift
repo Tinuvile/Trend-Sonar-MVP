@@ -17,9 +17,11 @@ class SubmitTrendViewModel: ObservableObject {
     @Published var inspiration = ""
     @Published var showingCamera = false
     @Published var selectedImage: UIImage?
-    @Published var submittedTrends: [SubmittedTrend] = []
     @Published var showingSubmissionSuccess = false
     @Published var isSubmitting = false
+    
+    // MARK: - Data Manager
+    private let trendManager = TrendDataManager.shared
     
     // MARK: - Computed Properties
     var canSubmit: Bool {
@@ -28,16 +30,20 @@ class SubmitTrendViewModel: ObservableObject {
         !isSubmitting
     }
     
+    var submittedTrends: [SubmittedTrend] {
+        trendManager.getUserSubmissionHistory()
+    }
+    
     var pendingSubmissions: [SubmittedTrend] {
-        submittedTrends.filter { $0.status == .pending }
+        trendManager.pendingSubmissions
     }
     
     var approvedSubmissions: [SubmittedTrend] {
-        submittedTrends.filter { $0.status == .approved }
+        trendManager.approvedSubmissions
     }
     
     var trendingSubmissions: [SubmittedTrend] {
-        submittedTrends.filter { $0.status == .trending }
+        trendManager.trendingSubmissions
     }
     
     // MARK: - Methods
@@ -60,7 +66,8 @@ class SubmitTrendViewModel: ObservableObject {
         
         // 模拟网络延迟
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.submittedTrends.insert(newSubmission, at: 0)
+            // 添加到数据管理器
+            self.trendManager.addUserSubmission(newSubmission)
             self.showingSubmissionSuccess = true
             self.isSubmitting = false
             
@@ -114,22 +121,6 @@ class SubmitTrendViewModel: ObservableObject {
         selectedCategory = category
     }
     
-    /// 模拟提名状态更新（在真实应用中，这会是后台推送）
-    func simulateStatusUpdate(for submissionId: UUID, newStatus: SubmissionStatus) {
-        if let index = submittedTrends.firstIndex(where: { $0.id == submissionId }) {
-            let updatedSubmission = SubmittedTrend(
-                name: submittedTrends[index].name,
-                category: submittedTrends[index].category,
-                description: submittedTrends[index].description,
-                inspiration: submittedTrends[index].inspiration,
-                submitDate: submittedTrends[index].submitDate,
-                status: newStatus,
-                supportCount: submittedTrends[index].supportCount + (newStatus == .approved ? 5 : 0)
-            )
-            submittedTrends[index] = updatedSubmission
-        }
-    }
-    
     /// 获取提交统计信息
     func getSubmissionStats() -> (total: Int, pending: Int, approved: Int, trending: Int) {
         return (
@@ -142,9 +133,7 @@ class SubmitTrendViewModel: ObservableObject {
     
     /// 获取总积分
     func getTotalPoints() -> Int {
-        let approvedPoints = approvedSubmissions.count * 50
-        let trendingPoints = trendingSubmissions.count * 200
-        return approvedPoints + trendingPoints
+        trendManager.calculateUserPoints()
     }
     
     /// 验证表单输入

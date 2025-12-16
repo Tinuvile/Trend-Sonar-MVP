@@ -139,6 +139,11 @@ struct ProfileView: View {
     // 设置选项
     private var settingsSection: some View {
         VStack(spacing: 12) {
+            // 我的风格档案
+            NavigationLink(destination: MyStyleProfileView()) {
+                SettingRowContent(icon: "wand.and.rays", title: "我的风格档案", color: .neonPurple)
+            }
+            
             // 风格偏好设置
             NavigationLink(destination: StyleSetupView(styleProfile: $viewModel.styleProfile).navigationTitle("风格偏好").navigationBarTitleDisplayMode(.inline)) {
                 SettingRowContent(icon: "person.crop.circle.badge.checkmark", title: "风格偏好设置", color: .neonPink)

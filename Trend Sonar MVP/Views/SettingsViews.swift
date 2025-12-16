@@ -2,208 +2,163 @@
 //  SettingsViews.swift
 //  Trend Sonar MVP
 //
-//  Created by admin on 2025/12/12.
+//  Created by admin on 2025/12/16.
 //
 
 import SwiftUI
 
 // MARK: - 通知设置页面
 struct NotificationSettingsView: View {
-    @State private var trendAlerts = true
-    @State private var predictionUpdates = true
-    @State private var weeklyDigest = false
-    @State private var newFollowers = true
+    @State private var trendNotifications = true
+    @State private var predictionNotifications = true
+    @State private var achievementNotifications = true
+    @State private var dailyReminder = false
+    @State private var weeklyReport = true
     
     var body: some View {
         ZStack {
             Color.clear.appBackground()
             
-            ScrollView {
-                VStack(spacing: 24) {
-                    // 推送控制
-                    VStack(spacing: 0) {
-                        NotificationToggle(title: "趋势预警", subtitle: "当关注的趋势进入红区时通知", isOn: $trendAlerts, icon: "flame.fill", color: .neonPink)
-                        Divider().background(Color.white.opacity(0.1)).padding(.leading, 50)
-                        
-                        NotificationToggle(title: "预测结果", subtitle: "当你的预测结算时通知", isOn: $predictionUpdates, icon: "target", color: .neonGreen)
-                        Divider().background(Color.white.opacity(0.1)).padding(.leading, 50)
-                        
-                        NotificationToggle(title: "周报推送", subtitle: "每周一推送个性化趋势周报", isOn: $weeklyDigest, icon: "newspaper.fill", color: .neonBlue)
-                        Divider().background(Color.white.opacity(0.1)).padding(.leading, 50)
-                        
-                        NotificationToggle(title: "新关注者", subtitle: "有人关注你或点赞你的提名时", isOn: $newFollowers, icon: "person.2.fill", color: .neonYellow)
-                    }
-                    .glassCard()
-                    
-                    Text("请在系统设置中开启 TrendSonar 的通知权限以确保接收重要提醒。")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.4))
-                        .padding(.horizontal)
-                        .multilineTextAlignment(.center)
+            Form {
+                Section("趋势通知") {
+                    Toggle("新趋势提醒", isOn: $trendNotifications)
+                    Toggle("预测结果通知", isOn: $predictionNotifications)
+                    Toggle("成就解锁通知", isOn: $achievementNotifications)
                 }
-                .padding()
+                .listRowBackground(Color.white.opacity(0.1))
+                
+                Section("定期提醒") {
+                    Toggle("每日探索提醒", isOn: $dailyReminder)
+                    Toggle("周报推送", isOn: $weeklyReport)
+                }
+                .listRowBackground(Color.white.opacity(0.1))
+                
+                Section("推送时间") {
+                    HStack {
+                        Text("提醒时间")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("19:00")
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .listRowBackground(Color.white.opacity(0.1))
             }
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle("通知设置")
-    }
-}
-
-// 通用开关组件
-struct NotificationToggle: View {
-    let title: String
-    let subtitle: String
-    @Binding var isOn: Bool
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .frame(width: 24)
-                    .glow(color: isOn ? color : .clear, radius: 5)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.body.bold())
-                        .foregroundColor(.white)
-                    
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
-                }
-            }
-        }
-        .toggleStyle(SwitchToggleStyle(tint: color))
-        .padding()
+        .preferredColorScheme(.dark)
     }
 }
 
 // MARK: - 通用设置页面
 struct GeneralSettingsView: View {
-    @State private var selectedLanguage = "简体中文"
-    @State private var clearCache = false
-    @State private var appVersion = "1.0.0 (Beta)"
+    @State private var hapticFeedback = true
+    @State private var soundEffects = true
+    @State private var autoSync = true
+    @State private var dataUsage = "WiFi"
+    @State private var language = "简体中文"
+    @State private var theme = "自动"
     
     var body: some View {
         ZStack {
             Color.clear.appBackground()
             
-            ScrollView {
-                VStack(spacing: 24) {
-                    // 语言与地区
-                    VStack(spacing: 0) {
-                        SettingsRowLink(icon: "globe", title: "语言", value: selectedLanguage, color: .neonBlue) {
-                            // 语言选择逻辑
+            Form {
+                Section("交互设置") {
+                    Toggle("触觉反馈", isOn: $hapticFeedback)
+                    Toggle("音效", isOn: $soundEffects)
+                    Toggle("自动同步", isOn: $autoSync)
+                }
+                .listRowBackground(Color.white.opacity(0.1))
+                
+                Section("数据和网络") {
+                    HStack {
+                        Text("数据使用")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(dataUsage)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    HStack {
+                        Text("缓存大小")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Button("清理缓存") {
+                            // 清理缓存逻辑
                         }
-                    }
-                    .glassCard()
-                    
-                    // 存储与数据
-                    VStack(spacing: 0) {
-                        Button(action: { clearCache = true }) {
-                            SettingsRowAction(icon: "trash", title: "清除缓存", subtitle: "24.5 MB", color: .white)
-                        }
-                    }
-                    .glassCard()
-                    
-                    // 关于与帮助
-                    VStack(spacing: 0) {
-                        SettingsRowLink(icon: "doc.text", title: "用户协议", color: .white.opacity(0.8)) {}
-                        Divider().background(Color.white.opacity(0.1)).padding(.leading, 50)
-                        
-                        SettingsRowLink(icon: "shield", title: "隐私政策", color: .white.opacity(0.8)) {}
-                        Divider().background(Color.white.opacity(0.1)).padding(.leading, 50)
-                        
-                        SettingsRowLink(icon: "info.circle", title: "关于我们", value: appVersion, color: .white.opacity(0.8)) {}
-                    }
-                    .glassCard()
-                    
-                    // 退出登录
-                    Button(action: {}) {
-                        Text("退出登录")
-                            .font(.headline)
-                            .foregroundColor(.red)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.red.opacity(0.1))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.red.opacity(0.3), lineWidth: 1))
+                        .font(.caption)
+                        .foregroundColor(.neonBlue)
                     }
                 }
-                .padding()
+                .listRowBackground(Color.white.opacity(0.1))
+                
+                Section("应用设置") {
+                    HStack {
+                        Text("语言")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(language)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    HStack {
+                        Text("主题")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(theme)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .listRowBackground(Color.white.opacity(0.1))
+                
+                Section("关于") {
+                    HStack {
+                        Text("版本")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("1.0.0")
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    HStack {
+                        Text("开发者")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("Trend Sonar Team")
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    Button("用户协议") {
+                        // 显示用户协议
+                    }
+                    .foregroundColor(.neonBlue)
+                    
+                    Button("隐私政策") {
+                        // 显示隐私政策
+                    }
+                    .foregroundColor(.neonBlue)
+                }
+                .listRowBackground(Color.white.opacity(0.1))
             }
+            .scrollContentBackground(.hidden)
         }
         .navigationTitle("通用设置")
-        .alert("缓存已清除", isPresented: $clearCache) {
-            Button("确定", role: .cancel) { }
-        }
+        .preferredColorScheme(.dark)
     }
 }
 
-// 设置行组件 (带箭头)
-struct SettingsRowLink: View {
-    let icon: String
-    let title: String
-    var value: String? = nil
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .frame(width: 24)
-                
-                Text(title)
-                    .font(.body)
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                if let value = value {
-                    Text(value)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.5))
-                }
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.3))
-            }
-            .padding()
-        }
+#Preview {
+    NavigationView {
+        NotificationSettingsView()
     }
+    .preferredColorScheme(.dark)
 }
 
-// 设置行组件 (操作类)
-struct SettingsRowAction: View {
-    let icon: String
-    let title: String
-    var subtitle: String? = nil
-    let color: Color
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .frame(width: 24)
-            
-            Text(title)
-                .font(.body)
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            if let subtitle = subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.5))
-            }
-        }
-        .padding()
+#Preview {
+    NavigationView {
+        GeneralSettingsView()
     }
+    .preferredColorScheme(.dark)
 }
-

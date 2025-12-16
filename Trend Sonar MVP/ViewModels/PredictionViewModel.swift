@@ -11,14 +11,22 @@ import Combine
 @MainActor
 class PredictionViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var predictions: [UserPrediction] = []
     @Published var selectedTrend: TrendItem?
     @Published var showingPredictionSheet = false
     @Published var confidence: Double = 50
+    @Published var betAmount: Int = 10 // 默认投注10声纳币
+    @Published var showInsufficientFundsAlert = false
+    
+    // MARK: - Data Manager
+    private let trendManager = TrendDataManager.shared
     
     // MARK: - Computed Properties
     var nicheTrends: [TrendItem] {
-        TrendItem.sampleData.filter { $0.zone == .niche }
+        trendManager.predictableTrends
+    }
+    
+    var predictions: [UserPrediction] {
+        trendManager.getUserPredictionHistory()
     }
     
     var successfulPredictions: Int {
@@ -26,15 +34,38 @@ class PredictionViewModel: ObservableObject {
     }
     
     var accuracyRate: Int {
-        guard !predictions.isEmpty else { return 0 }
-        let completedPredictions = predictions.filter { $0.isCorrect != nil }
-        guard !completedPredictions.isEmpty else { return 0 }
-        let successful = completedPredictions.filter { $0.isCorrect == true }
-        return Int((Double(successful.count) / Double(completedPredictions.count)) * 100)
+        trendManager.calculateAccuracyRate()
     }
     
     var totalPoints: Int {
-        predictions.filter { $0.isCorrect == true }.count * 50 // 简化计算
+        trendManager.calculateUserPoints()
+    }
+    
+    var availableSonarCoins: Int {
+        trendManager.getAvailableSonarCoins()
+    }
+    
+    /// 检查是否有足够的声纳币进行投注
+    var canAffordBet: Bool {
+        availableSonarCoins >= betAmount
+    }
+    
+    /// 计算潜在收益
+    var potentialReward: String {
+        guard let trend = selectedTrend else { return "0" }
+        
+        let baseMultiplier: Int
+        switch (trend.zone, TrendZone.trending) { // 假设预测到trending区
+        case (.niche, .trending): baseMultiplier = 3
+        case (.trending, .mainstream): baseMultiplier = 2
+        default: baseMultiplier = 2
+        }
+        
+        let confidenceBonus = confidence > 80 ? 1 : 0
+        let totalMultiplier = baseMultiplier + confidenceBonus
+        let reward = betAmount * totalMultiplier
+        
+        return "\(reward)"
     }
     
     // MARK: - Methods
@@ -50,6 +81,12 @@ class PredictionViewModel: ObservableObject {
     func submitPrediction() {
         guard let trend = selectedTrend else { return }
         
+        // 检查声纳币是否足够
+        guard canAffordBet else {
+            showInsufficientFundsAlert = true
+            return
+        }
+        
         let newPrediction = UserPrediction(
             trendName: trend.name,
             predictedDate: Date(),
@@ -59,12 +96,18 @@ class PredictionViewModel: ObservableObject {
             isCorrect: nil
         )
         
-        predictions.append(newPrediction)
-        closePredictionSheet()
+        // 添加到数据管理器（带投注）
+        let success = trendManager.addUserPrediction(newPrediction, betAmount: betAmount)
         
-        // 触发成功反馈
-        let impact = UIImpactFeedbackGenerator(style: .light)
-        impact.impactOccurred()
+        if success {
+            closePredictionSheet()
+            
+            // 触发成功反馈
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+        } else {
+            showInsufficientFundsAlert = true
+        }
     }
     
     /// 关闭预测表单
@@ -72,6 +115,19 @@ class PredictionViewModel: ObservableObject {
         showingPredictionSheet = false
         selectedTrend = nil
         confidence = 50
+        betAmount = 10 // 重置投注金额
+    }
+    
+    /// 调整投注金额
+    func adjustBetAmount(_ amount: Int) {
+        betAmount = max(5, min(availableSonarCoins, amount)) // 最少5声纳币，最多全部
+    }
+    
+    /// 获取推荐投注金额
+    func getRecommendedBets() -> [Int] {
+        let available = availableSonarCoins
+        let recommendations = [5, 10, 20, 50]
+        return recommendations.filter { $0 <= available }
     }
     
     /// 更新信心指数
@@ -79,19 +135,6 @@ class PredictionViewModel: ObservableObject {
         confidence = value
     }
     
-    /// 模拟预测结果更新（在真实应用中，这会是后台任务）
-    func simulatePredictionResult(for predictionId: UUID, isCorrect: Bool) {
-        if let index = predictions.firstIndex(where: { $0.id == predictionId }) {
-            predictions[index] = UserPrediction(
-                trendName: predictions[index].trendName,
-                predictedDate: predictions[index].predictedDate,
-                currentZone: predictions[index].currentZone,
-                targetZone: predictions[index].targetZone,
-                confidence: predictions[index].confidence,
-                isCorrect: isCorrect
-            )
-        }
-    }
     
     /// 获取预测状态文本
     func getStatusText(for prediction: UserPrediction) -> String {

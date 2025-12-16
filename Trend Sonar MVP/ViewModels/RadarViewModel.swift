@@ -11,7 +11,6 @@ import Combine
 @MainActor
 class RadarViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var trends: [TrendItem] = TrendItem.sampleData
     @Published var selectedTrend: TrendItem?
     @Published var isScanning = false
     @Published var scanAngle: Double = 0
@@ -21,9 +20,12 @@ class RadarViewModel: ObservableObject {
     @Published var isPersonalized = false
     @Published var pulseScale: CGFloat = 1.0
     
+    // MARK: - Data Manager
+    private let trendManager = TrendDataManager.shared
+    
     // MARK: - Computed Properties
     var filteredTrends: [TrendItem] {
-        var baseTrends = trends
+        var baseTrends = trendManager.radarTrends
         
         // 按类别过滤
         if let category = selectedCategory {
@@ -127,9 +129,20 @@ class RadarViewModel: ObservableObject {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
         
+        // 创建预测记录
+        let prediction = UserPrediction(
+            trendName: trend.name,
+            predictedDate: Date(),
+            currentZone: trend.zone,
+            targetZone: .trending, // 默认预测进入trending区
+            confidence: 70, // 默认信心指数
+            isCorrect: nil
+        )
+        
+        // 添加到数据管理器
+        trendManager.addUserPrediction(prediction)
+        
         // 关闭详情页
         closeTrendDetail()
-        
-        // 这里可以添加预测逻辑，比如导航到预测页面或显示预测表单
     }
 }
