@@ -211,10 +211,20 @@ struct PredictionView: View {
                 }
                 
                 // 信心指数
-                ConfidenceSliderView(
-                    confidence: $viewModel.confidence,
-                    trendColor: trend.zone.color
-                )
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Text("信心指数")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(Int(viewModel.confidence))%")
+                            .font(.title3.bold().monospaced())
+                            .foregroundColor(trend.zone.color)
+                    }
+                    
+                    Slider(value: $viewModel.confidence, in: 0...100, step: 10)
+                        .accentColor(trend.zone.color)
+                }
                 .padding()
                 .glassCard()
                 
@@ -412,31 +422,6 @@ struct PredictionHistoryCard: View {
     private var statusText: String {
         guard let isCorrect = prediction.isCorrect else { return "WAITING" }
         return isCorrect ? "SUCCESS" : "FAILED"
-    }
-}
-
-// MARK: - 信心指数组件
-struct ConfidenceSliderView: View {
-    @Binding var confidence: Double
-    let trendColor: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("信心指数")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                Spacer()
-                Text("\(Int(confidence))%")
-                    .font(.title3.bold().monospaced())
-                    .foregroundColor(trendColor)
-            }
-            
-            Slider(value: $confidence, in: 0...100, step: 10)
-                .accentColor(trendColor)
-        }
-        .padding()
-        .glassCard()
     }
 }
 
