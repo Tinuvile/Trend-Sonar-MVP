@@ -38,6 +38,11 @@ struct PredictionView: View {
                         .preferredColorScheme(.dark)
                 }
             }
+            .alert("声纳币不足", isPresented: $viewModel.showInsufficientFundsAlert) {
+                Button("确定", role: .cancel) { }
+            } message: {
+                Text("你的声纳币不足以进行此次投注，请降低投注金额或通过预测获得更多声纳币。")
+            }
         }
     }
     
@@ -189,36 +194,90 @@ struct PredictionView: View {
                 .padding()
                 .glassCard()
                 
-                Text("你认为这个趋势会走向何方？")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                VStack(spacing: 8) {
+                    Text("你认为这个趋势会走向何方？")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    HStack {
+                        Text("投注: \(viewModel.betAmount) 声纳币")
+                            .font(.caption)
+                            .foregroundColor(.neonYellow)
+                        
+                        Spacer()
+                        
+                        Text("潜在收益: \(viewModel.potentialReward) 声纳币")
+                            .font(.caption.bold())
+                            .foregroundColor(.neonGreen)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color.black.opacity(0.3)))
+                }
                 
                 // 预测选项
                 VStack(spacing: 12) {
                     PredictionOption(
                         title: "冲进先锋区",
                         subtitle: "热度 > 60",
-                        points: "50 PTS",
-                        isSelected: true
-                    )
+                        points: "低风险",
+                        isSelected: viewModel.selectedTargetZone == .trending
+                    ) {
+                        viewModel.selectTargetZone(.trending)
+                    }
                     
                     PredictionOption(
                         title: "直达主流区",
                         subtitle: "热度 > 80",
-                        points: "200 PTS",
-                        isSelected: false
-                    )
+                        points: "高收益",
+                        isSelected: viewModel.selectedTargetZone == .mainstream
+                    ) {
+                        viewModel.selectTargetZone(.mainstream)
+                    }
                 }
                 
-                // 信心指数
+                // 投注设置
                 VStack(alignment: .leading, spacing: 16) {
+                    // 投注金额
+                    HStack {
+                        Text("投注金额")
+                            .font(.subheadline.bold())
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(viewModel.betAmount) 声纳币")
+                            .font(.subheadline.bold().monospaced())
+                            .foregroundColor(.neonYellow)
+                    }
+                    
+                    HStack(spacing: 12) {
+                        ForEach([5, 10, 20, 50], id: \.self) { amount in
+                            Button("\(amount)") {
+                                viewModel.betAmount = amount
+                            }
+                            .font(.caption.bold())
+                            .foregroundColor(viewModel.betAmount == amount ? .black : .white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule().fill(viewModel.betAmount == amount ? Color.neonYellow : Color.white.opacity(0.1))
+                            )
+                        }
+                        
+                        Spacer()
+                        
+                        Text("余额: \(viewModel.availableSonarCoins)")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    
+                    // 信心指数
                     HStack {
                         Text("信心指数")
-                            .font(.headline)
+                            .font(.subheadline.bold())
                             .foregroundColor(.white)
                         Spacer()
                         Text("\(Int(viewModel.confidence))%")
-                            .font(.title3.bold().monospaced())
+                            .font(.subheadline.bold().monospaced())
                             .foregroundColor(trend.zone.color)
                     }
                     
@@ -232,9 +291,16 @@ struct PredictionView: View {
                 
                 // 提交按钮
                 Button(action: { viewModel.submitPrediction() }) {
-                    Text("提交预测")
+                    HStack {
+                        Image(systemName: "bolt.fill")
+                        Text(viewModel.canAffordBet ? "提交预测" : "声纳币不足")
+                    }
                 }
-                .buttonStyle(NeonSolidButtonStyle(color: trend.zone.color))
+                .buttonStyle(NeonSolidButtonStyle(
+                    color: viewModel.canAffordBet ? trend.zone.color : .gray,
+                    textColor: .white
+                ))
+                .disabled(!viewModel.canAffordBet)
             }
             .padding()
         }
@@ -320,8 +386,10 @@ struct PredictionOption: View {
     let subtitle: String
     let points: String
     let isSelected: Bool
+    let action: () -> Void
     
     var body: some View {
+        Button(action: action) {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -361,6 +429,8 @@ struct PredictionOption: View {
             RoundedRectangle(cornerRadius: 16)
                 .stroke(isSelected ? Color.neonBlue : Color.white.opacity(0.1), lineWidth: 1)
         )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

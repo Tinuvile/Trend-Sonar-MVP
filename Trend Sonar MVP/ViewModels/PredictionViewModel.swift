@@ -16,6 +16,7 @@ class PredictionViewModel: ObservableObject {
     @Published var confidence: Double = 50
     @Published var betAmount: Int = 10 // 默认投注10声纳币
     @Published var showInsufficientFundsAlert = false
+    @Published var selectedTargetZone: TrendZone = .trending // 用户选择的目标区域
     
     // MARK: - Data Manager
     private let trendManager = TrendDataManager.shared
@@ -55,8 +56,9 @@ class PredictionViewModel: ObservableObject {
         guard let trend = selectedTrend else { return "0" }
         
         let baseMultiplier: Int
-        switch (trend.zone, TrendZone.trending) { // 假设预测到trending区
+        switch (trend.zone, selectedTargetZone) {
         case (.niche, .trending): baseMultiplier = 3
+        case (.niche, .mainstream): baseMultiplier = 5 // 小众直达主流，难度最高
         case (.trending, .mainstream): baseMultiplier = 2
         default: baseMultiplier = 2
         }
@@ -74,7 +76,13 @@ class PredictionViewModel: ObservableObject {
     func selectTrendForPrediction(_ trend: TrendItem) {
         selectedTrend = trend
         confidence = 50 // 重置信心指数
+        selectedTargetZone = .trending // 重置为默认选择
         showingPredictionSheet = true
+    }
+    
+    /// 选择预测目标区域
+    func selectTargetZone(_ zone: TrendZone) {
+        selectedTargetZone = zone
     }
     
     /// 提交预测
@@ -91,7 +99,7 @@ class PredictionViewModel: ObservableObject {
             trendName: trend.name,
             predictedDate: Date(),
             currentZone: trend.zone,
-            targetZone: .trending, // 简化处理，默认预测进入trending区
+            targetZone: selectedTargetZone, // 使用用户选择的目标区域
             confidence: Int(confidence),
             isCorrect: nil
         )
