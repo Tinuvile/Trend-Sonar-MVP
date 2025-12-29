@@ -173,7 +173,7 @@ class TrendDataManager: ObservableObject {
         userSubmissions
     }
     
-    /// 计算用户积分（完整的奖励系统）
+    /// 计算用户积分（奖励系统）
     func calculateUserPoints() -> Int {
         var points = 0
         
