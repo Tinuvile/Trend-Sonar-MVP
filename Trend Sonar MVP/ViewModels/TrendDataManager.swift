@@ -134,7 +134,7 @@ class TrendDataManager: ObservableObject {
     /// 获取趋势的预测统计
     func getPredictionStats(for trendId: UUID) -> (totalPredictions: Int, bullishPredictions: Int) {
         let predictions = userPredictions.filter { prediction in
-            // 这里简化处理，实际需要更精确的匹配
+            // 简化处理，实际需要更精确的匹配
             allTrends.contains { $0.name == prediction.trendName }
         }
         
